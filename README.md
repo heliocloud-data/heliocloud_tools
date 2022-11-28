@@ -7,6 +7,7 @@ Resource for how to upload data into the GSFC HelioCloud S3 storage, and for [re
 * Estimated average file size
 * Meta data variables in each file
  
+The team is focused on the MMS uploads currently.  New upload requests will be evaluated at our periodic team meetings as to when in 2023-2024 they may be schedulable.
 
 ## Getting started
 
@@ -60,7 +61,7 @@ Informal Suggestions
 * Testing Lambdas with small batches recommended prior to the entire upload to reduce AWS costs
 
 ## Status (Nov 17 2022)
-* Solved for MMS as the pilot, 
+* Solved for MMS as the pilot, MMS official upload in progress.
 
 ## License
 This work is licensed under the BSD-3 open source license.
