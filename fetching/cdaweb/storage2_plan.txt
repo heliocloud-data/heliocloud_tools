@@ -1,0 +1,42 @@
+1) Jeff email Tskaka + Tami and say you need an account on storage2 server
+2) Set up python conda env using requirements.txt from the cdaweb.py package (zip file was sent to entire group via email)
+3) Make sure IAMS or keys are set to storage2 can write to S3 staging
+4) Figure out where the CDAWEB files are stored (which root directory, etc)
+5) Wait for Sandy to modify and test new cdaweb.py routine
+6) Put in the new cdaweb.py Sandy delivers to you, run it and see what breaks
+
+Testing: see notes at end of cdaweb.py.  Recommended:
+
+a) Set 'PRODUCTION = False' at line 312, 'local = True' at line 284
+   (which avoids writing to S3, and just writes to the local disk)
+
+b) For our usual web fetch from CDAWeb (prior baseline),
+   set 'fetchlocal = None' at line 288
+
+   Run 'python cdaweb.py'.  This will fetch a small subset of CDAWeb via Web
+   and put it on the local disk in the directory './cdaweb'.  Validate.
+   Delete the cdaweb dir ('rm -r cdaweb/')
+
+c) set 'fetchlocal = <insert_path_here>' at kline 288,
+   where <insert_path_here> is the "/storage2/whatever" local disk CDAWeb copy.
+
+   Run 'python.cdaweb.py'.  This will fetch the same subset but this time
+   use a copy from storage2 instead of via web.  Again it puts it into
+   './cdaweb' so Validate, then delete ('rm -r cdaweb/')
+
+d) Set 'local = False' at line 284 so it will write to S3.  Rerun both
+   tests 'b' (web fetch) and 'c' (local fetch) and verify it wrote to S3.
+   If all tests work, we can move to production.
+
+e) For production-level operations, Set 'PRODUCTION = True' at line 312.
+   Make sure 'local = False' at line 284 and 'fetchlocal = <insert_path_here>'
+   at line 288.  You can adjust 'tcount = 8' to dial up or down the number
+   of threads this uses to adjust server/disk/S3 Network load.
+
+
+Notes: Do not worry about the error in the log file of the general type
+   'no files at https://', that just indicates for the given time range
+   there were no files in the DB.  Other Errors, let us know.
+
+
+ 

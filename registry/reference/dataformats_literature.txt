@@ -1,0 +1,166 @@
+List of relevant references and summaries. (Updated Jan 11 2022)
+
+Title: HDFITS: porting the FITS data model to HDF5
+URL: https://arxiv.org/abs/1505.06421
+Summary: FITS to HDF5, including a Python fits2hdf/hdf2fits pair (using astroPy)
+Action: core, answers our FITS questions
+
+Title: Cloud Optimized Data Formats
+URL: https://ceos.org/document_management/Working_Groups/WGISS/Meetings/WGISS-49/2.%20Wednesday%20April%2022/20200422T1330_Cloud%20Optimized%20Data%20Formats_.pdf
+Summary: Great 2020 benchmarking of cloud use of netCDF, GeoTIFF, Zarr, Parquet, cloud-optimized GeoTIFF (COG) and HDF in the Cloud.
+Action: essential read; good starting point for creating out analysis plan
+
+Title: Kerchunk
+URL: https://docs.google.com/presentation/d/1-fjSixN3awxaFHcVFgvnqsR4RmwquauJ/edit#slide=id.p1, https://github.com/fsspec/kerchunk, https://agu2021fallmeeting-agu.ipostersessions.com/Default.aspx?s=D8-E7-AB-FD-34-05-5D-2E-97-90-DA-10-DC-8C-83-7E
+Summary: Kerchunk is a layer on top of fsspec to create Zarr-like metadata for non-Zarr HDF/NetCDF files. AGU poster has pre-process times of <2 min for Zarr and Kerchunk then data open times of 30 seconds, vs data open of 10 minutes for NetCDF4; Zarr required an extra 52GB of storage and Kerchunk 0.5GB.
+Action: Essential read; suggests HDF obviates needs for reformatting to Zarr
+
+Title: Data Format Translation Tools (via CDF)
+URL: https://cdf.gsfc.nasa.gov/html/dttools.html
+Summary: Translators between CDF & FITS, CDF & netCDF, CDF & HDF4, CDF & HDF5
+Action: Essential-- easy for us to make test data sets (identical data in different formats)
+
+Title: email from Conrad Schiff
+URL: n/a
+Summary: "No, but thanx for the article.  CDF was developed at Goddard in the 1970s, originally as Climate Data Format, but quickly generalized as Common Data Format[...] Just to confuse things, the file extension are also sometimes named *.cdf, and must be opened by their library <http://www.unidata.ucar.edu/software/netcdf/index.html>[...]To distinguish CDF and netCDF, NetCDFs start with "CDF" whereas CDFs have the string "Common Data Format (CDF)" near the beginning (try the Unix strings command)."
+Action: (great summary of file formats!)
+
+Title: CDF, netCDF and HDF
+URL: https://www.unidata.ucar.edu/mailing_lists/archives/netcdf-hdf/1992/msg00017.html
+Summary: 1992 post about the differences between CDF and netCDF/HDF
+Action: Good (if outdated) read, useful because we'll have to handle older CDF  and pre-HDF-netCDF files
+
+Title: Cloud-optimized access to HDF5/NetCDF4 files using the Zarr API and the OPeNDAP DMR++
+URL: https://agu.confex.com/agu/fm21/meetingapp.cgi/Paper/964552, https://docs.opendap.org/index.php?title=DMR%2B%2B, also https://packagegalaxy.com/python/zarr-eosdis-store
+Summary: DMR++ is yet another 'create metadata to mimic Zarr for other formats'.  Cutting edge use of newer HDF5 and Zarr API for use with S3 to improve performance
+Action: We should look into testing DMR++ as part of our tests; Jon asked James & Patrick if they'd talk with us
+
+Title: "COF Zarr Access via Reformat"
+URL: https://nasa-openscapes.github.io/earthdata-cloud-cookbook/external/cof-zarr-reformat.html
+Summary: Converted NetCDF to Zarr, includes Python code to get data, reformat it, and access Zarr.
+Action: We should replicate this and add timing studies (NetCDF vs Zarr)
+
+Title: "Cloud-Performant NetCDF4/HDF5 Reading with the Zarr Library"
+URL: https://medium.com/pangeo/cloud-performant-reading-of-netcdf4-hdf5-data-using-the-zarr-library-1a95c5c92314
+Summary: Performance tests on HDF5/NetCDF4 vs Zarr and timing tests. Used a modded Zarr/Xarray library to enable Zarr 'chunks' for HDF5 and found no performance differences, but requires creating Zarr-like metadata for HDF5.
+Action: Useful read on +/- of Zarr vs HDF5
+
+Title: Cloud-Performant NetCDF4/HDF5 with Zarr, Fsspec, and Intake
+URL: https://medium.com/pangeo/cloud-performant-netcdf4-hdf5-with-zarr-fsspec-and-intake-3d3a3e7cb935
+Summary: alt on the other Cloud-Performant paper that required no modifications to Zarr/Xarray, instead used the Fsspec package with modifications.
+Action: Essential read on using Fsspec and on need to create metadata
+
+Title: Fake it until you make it -- Reading GOES NetCDF4 data on AWS S3 as Zarr for rapid data access
+URL: https://medium.com/pangeo/fake-it-until-you-make-it-reading-goes-netcdf4-data-on-aws-s3-as-zarr-for-rapid-data-access-61e33f8fe685
+Summary: A Python tutorial for using fsspec to read NetCDF4 as Zarr by adding metadata
+Action: Good 3rd part on the fsspec tools
+
+Title: Comparing Read Times of Zarr and netCDF Data Formats
+URL: https://agu2021fallmeeting-agu.ipostersessions.com/?s=98-5B-44-19-C9-FC-18-9F-F4-FE-56-85-24-42-EB-DA, https://github.com/irpfander/Comparing-Read-Times-of-NetCDF-and-Zarr-with-Python
+Summary: AGU poster using Python and comparing NetCDF-3/no compression, netCDF-4 and netCDF-4 Classic with zlib compression, and Zarr (which uses Blosc for compression). Started with netCDF and converted/chunked to netCDF-4 using nccopy and Rechunker to make Zarr.
+Action: Grab all their code is in Github, it's a great basis for our testing
+
+Title: nccopy
+URL: https://www.unidata.ucar.edu/software/netcdf/workshops/2011/utilities/Nccopy.html
+Summary: Tool for converting/compressing/chunking netCDF-1, 2, 3, 4 data
+Action: Likely will use in creating our performance test data sets
+
+Title: Overview of Zarr Support in netCDF-C/Integrating Zarr with the NetCDF Ecosystem
+URL: https://www.unidata.ucar.edu/blogs/developer/entry/overview-of-zarr-support-in, also https://agu2021fallmeeting-agu.ipostersessions.com/?s=8A-C8-CC-69-9E-7E-3C-4D-60-6F-F9-4D-7E-77-CD-60
+Summary: Describes new NCZarr (NetCDF-4 with mapping similar to Zarr), NCZarr is a superset of Zarr v2 and works in S3, is apparently already in the netCDF-C library
+Action: We need to add NCZarr to our list of formats to test
+
+Title: Heliophysics System Observatory Connect
+URL: https://hsoconnect.hpde.gsfc.nasa.gov/
+Summary: Link to many Jupyter notebooks for Helio
+Action: need to triage/assess if any are relevant for this project
+
+Title: Additional Compression with NetCDF
+URL: https://www.hdfgroup.org/wp-content/uploads/2021/10/HDF5-Users-Workshop-2021-Additional-Compression-Methods-for-NetCDF.pdf
+Summary: Powerpoint on NetCDF 'backend formats' (CDF1, 2, 4, HDF5, Zarr) and addition of compression
+Action: Useful quick read, also, we need to include 'compressed' versions of our formats in our analysis
+
+Title: Comparing Read Times of Zarr, HDF5 and netCDF Data Formats
+URL: https://agu.confex.com/agu/fm21/meetingapp.cgi/Paper/874500
+Summary: Abstract only for AGU talk with useful summary of chunking
+Action: Read (it's quick), maybe follow up with authors?
+
+Title: Tranfer Data from NetCDF on Hierarchical Storage to Zarr on Object Storage
+URL: https://presentations.copernicus.org/EGU21/EGU21-2442_presentation.pdf
+Summary: Powerpoint on a 5TB conversion of NetCDF to Zarr then back into netCDF plus performance stats.
+Action: Good read on performance stats, interesting alt of using reformatted netCDFs.
+
+Title: Open Avalanche Project
+URL: https://github.com/scottcha/OpenAvalancheProject, https://github.com/scottcha/OpenAvalancheProject/blob/master/DataPipelineNotebooks/2.ConvertToZarr.ipynb
+Summary: Step 4 converts NetCDF to Zarr, taking hours. Code example: ctz = ConvertToZarr(seasons, regions, data_root)
+Action: sample code for converting NetCDF to Zarr
+
+Title: Zarr (home page)
+URL: https://zarr.readthedocs.io/en/stable/#
+Summary: Docs/Tutorial/API on Zarr
+Action: useful reference on Zarr as needed
+
+Title: HDF (home page)
+URL: https://portal.hdfgroup.org/display/support/
+Summary: Docs/FAQs on HDF5
+Action: useful reference for HDF5 as needed
+
+Title: fsspec (home page)
+URL: https://filesystem-spec.readthedocs.io/en/latest/
+Summary: Docs on fsspec in Python, used by Dask, pandas, xarray, zarr
+Action: Really interesting package for treating all filetypes as just files-- see also 'Kerchunk'
+
+Title: Compression Support in NetCDF Zarr
+URL: https://agu2021fallmeeting-agu.ipostersessions.com/?s=0D-4C-D5-05-5A-04-B2-43-35-F1-ED-3C-0F-44-57-BB
+Summary: AGU poster on unifying Zarr style compression with netCDF-4/HDF5 compression. (Antunes saved a local copy of the poster)
+Action: Useful read, poster walks through how to do mod. Not sure if we need it, though.
+
+Title: Rechunker
+URL: https://rechunker.readthedocs.io/en/latest/#
+Summary: A python package for trying different chunking formats
+Action: possibly a side trip if we want to go into alt chunking approaches?
+
+Title: PyHC Projects
+URL: https://heliopython.org/projects/
+Summary: List/links to many helio-useful Python packages
+Action: Not directly related to data formats, but a useful index of possible packages to mine
+
+Title: Snakes on a Spaceship - An Overview of Python in Heliophysics
+URL: https://arxiv.org/pdf/1901.00143.pdf
+Summary: great 2019 paper summarizing heliophysics python packages out there
+Action: Not directly related to data formats, but a useful index of possible packages to mine
+
+Title: Zarr-based chunk-level cumulative sums in reduced dimensions
+URL: https://agu2021fallmeeting-agu.ipostersessions.com/?s=AD-3D-70-9B-03-E1-75-D7-E2-1D-E4-82-83-D4-68-6B
+Summary: AGU poster on tuning chunking for Giovanni-provided data
+Action: None; goes too deep into domain-specific chunking versus our general survey of user needs
+
+Title: Common Data and Metadata Models for Geophysical Data in the Cloud
+URL: https://agu2021fallmeeting-agu.ipostersessions.com/?s=17-BB-79-32-C9-F4-6F-19-1B-6A-4B-FD-CD-6B-81-C2
+Summary: AGU poster looking at other geophysical data formats-- Rinex, MiniSeed, PH5, ASDF, MTH5
+Action: none, just a neat footnotes on other data formats
+
+Title: Using Cloud Computing to Analyze Model Output Archived in Zarr Format
+URL: https://mesowest.utah.edu/html/hrrr/zarr_documentation/GOWAN-ZARR-JTECH.pdf
+Summary: long paper on weather-prediction GRIB2 files to Zarr. In short, Zarr is better.
+Action: ignore, just supports that Zarr is efficient, which we already know
+
+Title: JupyterHub SSH and SFTP, Connect SFTP data to Jupyter for Analytics, (2) Guide to SFTP and S3 Bucket
+URL: https://jupyterhub-ssh.readthedocs.io/en/latest/, https://panoply.io/integrations/jupyter/sftp/, https://www.pcwdld.com/access-amazon-s3-bucket-ftp-sftp, https://www.ittsystems.com/ftp-sftp-access-to-amazon-s3-bucket/#wbounce-modal
+Summary: Set of papers on access we'll need to build
+Action: read and implement
+
+Title: Build your own AWS DropBox with ownCloud
+URL: https://aws.amazon.com/marketplace/pp/prodview-amzjbgopppidu#pdp-pricing
+Summary: an AWS Marketplace middleware for cloud tools
+Action: look into for better UI for sharing data & notebooks
+
+Title: Terra takes the pain out of ‘omics’ computing in the cloud
+URL: https://www.nature.com/articles/d41586-021-03822-7?WT.ec_id=NATURE-20220107
+Summary: Example of cloud lessons learned in biometrics
+Action: Mine for wordage and insight into customer experience
+
+Title: (misc emails)
+URL: n/a
+Summary: Eric got h5py and the ros3 driver reading S3; Sandy got pandas.read_hdf() (using h5py and s3fs) reading S3
+Action: Work is already part of this study

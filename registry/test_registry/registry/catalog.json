@@ -1,0 +1,662 @@
+{
+    "Cloudy": "0.1",
+    "endpoint": "s3://gov-nasa-helio-public/MMS/",
+    "name": "GSFC HelioCloud",
+    "contact": "Dr. Contact, dr_contact@example.com",
+    "description": "Optional description of this collection",
+    "citation": "Optional how to cite, preferably a DOI for the server",
+    "catalog": [
+		{
+	    "id": "mms1_feeps_brst_electron",
+	    "loc": "s3://helio-public/MMS/mms1/feeps/brst/l2/electron/",
+	    "title": "mms1/feeps/brst/l2/electron/",
+	    "startdate": "2015-06-01T00:00Z",
+	    "enddate": "2021-12-31T23:59Z",
+	    "modificationdate": "2023-03-08T00:00Z",
+	    "indexformat": "csv",
+	    "fileformat": "cdf",
+            "ownership": {
+                "description": "Optional description for dataset",
+                "resourceID": "optional identifier e.g. SPASE ID",
+                "creationDate": "optional ISO 8601 date/time of the dataset creation",
+                "citation": "optional how to cite this dataset, DOI or similar",
+                "contact": "optional contact info, SPASE ID, email, or ORCID",
+                "aboutURL": "optional website URL for info, team, etc"
+            }
+		},
+		{
+			"id": "mms1_feeps_brst_ion",
+			"loc": "s3://helio-public/MMS/mms1/feeps/brst/l2/ion/",
+			"title": "mms1/feeps/brst/l2/ion/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms1_feeps_srvy_electron",
+			"loc": "s3://helio-public/MMS/mms1/feeps/srvy/l2/electron/",
+			"title": "mms1/feeps/srvy/l2/electron/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms1_feeps_srvy_ion",
+			"loc": "s3://helio-public/MMS/mms1/feeps/srvy/l2/ion/",
+			"title": "mms1/feeps/srvy/l2/ion/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms1_fgm_brst",
+			"loc": "s3://helio-public/MMS/mms1/fgm/brst/l2/",
+			"title": "mms1/fgm/brst/l2/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms1_fgm_srvy",
+			"loc": "s3://helio-public/MMS/mms1/fgm/srvy/l2/",
+			"title": "mms1/fgm/srvy/l2/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms1_fpi_brst_des-dist",
+			"loc": "s3://helio-public/MMS/mms1/fpi/brst/l2/des-dist/",
+			"title": "mms1/fpi/brst/l2/des-dist/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms1_fpi_brst_des-moms",
+			"loc": "s3://helio-public/MMS/mms1/fpi/brst/l2/des-moms/",
+			"title": "mms1/fpi/brst/l2/des-moms/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms1_fpi_brst_dis-dist",
+			"loc": "s3://helio-public/MMS/mms1/fpi/brst/l2/dis-dist/",
+			"title": "mms1/fpi/brst/l2/dis-dist/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms1_fpi_brst_dis-moms",
+			"loc": "s3://helio-public/MMS/mms1/fpi/brst/l2/dis-moms/",
+			"title": "mms1/fpi/brst/l2/dis-moms/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms1_fpi_fast_des-dist",
+			"loc": "s3://helio-public/MMS/mms1/fpi/fast/l2/des-dist/",
+			"title": "mms1/fpi/fast/l2/des-dist/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms1_fpi_fast_des-moms",
+			"loc": "s3://helio-public/MMS/mms1/fpi/fast/l2/des-moms/",
+			"title": "mms1/fpi/fast/l2/des-moms/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms1_fpi_fast_dis-dist",
+			"loc": "s3://helio-public/MMS/mms1/fpi/fast/l2/dis-dist/",
+			"title": "mms1/fpi/fast/l2/dis-dist/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms1_fpi_fast_dis-moms",
+			"loc": "s3://helio-public/MMS/mms1/fpi/fast/l2/dis-moms/",
+			"title": "mms1/fpi/fast/l2/dis-moms/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms1_mec_brst_epht89d",
+			"loc": "s3://helio-public/MMS/mms1/mec/brst/l2/epht89d/",
+			"title": "mms1/mec/brst/l2/epht89d/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms1_mec_srvy_epht89d",
+			"loc": "s3://helio-public/MMS/mms1/mec/srvy/l2/epht89d/",
+			"title": "mms1/mec/srvy/l2/epht89d/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms2_feeps_brst_electron",
+			"loc": "s3://helio-public/MMS/mms2/feeps/brst/l2/electron/",
+			"title": "mms2/feeps/brst/l2/electron/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms2_feeps_brst_ion",
+			"loc": "s3://helio-public/MMS/mms2/feeps/brst/l2/ion/",
+			"title": "mms2/feeps/brst/l2/ion/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms2_feeps_srvy_electron",
+			"loc": "s3://helio-public/MMS/mms2/feeps/srvy/l2/electron/",
+			"title": "mms2/feeps/srvy/l2/electron/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms2_feeps_srvy_ion",
+			"loc": "s3://helio-public/MMS/mms2/feeps/srvy/l2/ion/",
+			"title": "mms2/feeps/srvy/l2/ion/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms2_fgm_brst",
+			"loc": "s3://helio-public/MMS/mms2/fgm/brst/l2/",
+			"title": "mms2/fgm/brst/l2/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms2_fgm_srvy",
+			"loc": "s3://helio-public/MMS/mms2/fgm/srvy/l2/",
+			"title": "mms2/fgm/srvy/l2/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms2_fpi_brst_des-dist",
+			"loc": "s3://helio-public/MMS/mms2/fpi/brst/l2/des-dist/",
+			"title": "mms2/fpi/brst/l2/des-dist/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms2_fpi_brst_des-moms",
+			"loc": "s3://helio-public/MMS/mms2/fpi/brst/l2/des-moms/",
+			"title": "mms2/fpi/brst/l2/des-moms/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms2_fpi_brst_dis-dist",
+			"loc": "s3://helio-public/MMS/mms2/fpi/brst/l2/dis-dist/",
+			"title": "mms2/fpi/brst/l2/dis-dist/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms2_fpi_brst_dis-moms",
+			"loc": "s3://helio-public/MMS/mms2/fpi/brst/l2/dis-moms/",
+			"title": "mms2/fpi/brst/l2/dis-moms/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms2_fpi_fast_des-dist",
+			"loc": "s3://helio-public/MMS/mms2/fpi/fast/l2/des-dist/",
+			"title": "mms2/fpi/fast/l2/des-dist/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms2_fpi_fast_des-moms",
+			"loc": "s3://helio-public/MMS/mms2/fpi/fast/l2/des-moms/",
+			"title": "mms2/fpi/fast/l2/des-moms/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms2_fpi_fast_dis-dist",
+			"loc": "s3://helio-public/MMS/mms2/fpi/fast/l2/dis-dist/",
+			"title": "mms2/fpi/fast/l2/dis-dist/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms2_fpi_fast_dis-moms",
+			"loc": "s3://helio-public/MMS/mms2/fpi/fast/l2/dis-moms/",
+			"title": "mms2/fpi/fast/l2/dis-moms/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms2_mec_brst_epht89d",
+			"loc": "s3://helio-public/MMS/mms2/mec/brst/l2/epht89d/",
+			"title": "mms2/mec/brst/l2/epht89d/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms2_mec_srvy_epht89d",
+			"loc": "s3://helio-public/MMS/mms2/mec/srvy/l2/epht89d/",
+			"title": "mms2/mec/srvy/l2/epht89d/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+			{
+			"id": "mms3_feeps_brst_electron",
+			"loc": "s3://helio-public/MMS/mms3/feeps/brst/l2/electron/",
+			"title": "mms3/feeps/brst/l2/electron/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms3_feeps_brst_ion",
+			"loc": "s3://helio-public/MMS/mms3/feeps/brst/l2/ion/",
+			"title": "mms3/feeps/brst/l2/ion/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms3_feeps_srvy_electron",
+			"loc": "s3://helio-public/MMS/mms3/feeps/srvy/l2/electron/",
+			"title": "mms3/feeps/srvy/l2/electron/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms3_feeps_srvy_ion",
+			"loc": "s3://helio-public/MMS/mms3/feeps/srvy/l2/ion/",
+			"title": "mms3/feeps/srvy/l2/ion/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms3_fgm_brst",
+			"loc": "s3://helio-public/MMS/mms3/fgm/brst/l2/",
+			"title": "mms3/fgm/brst/l2/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms3_fgm_srvy",
+			"loc": "s3://helio-public/MMS/mms3/fgm/srvy/l2/",
+			"title": "mms3/fgm/srvy/l2/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms3_fpi_brst_des-dist",
+			"loc": "s3://helio-public/MMS/mms3/fpi/brst/l2/des-dist/",
+			"title": "mms3/fpi/brst/l2/des-dist/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms3_fpi_brst_des-moms",
+			"loc": "s3://helio-public/MMS/mms3/fpi/brst/l2/des-moms/",
+			"title": "mms3/fpi/brst/l2/des-moms/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms3_fpi_brst_dis-dist",
+			"loc": "s3://helio-public/MMS/mms3/fpi/brst/l2/dis-dist/",
+			"title": "mms3/fpi/brst/l2/dis-dist/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms3_fpi_brst_dis-moms",
+			"loc": "s3://helio-public/MMS/mms3/fpi/brst/l2/dis-moms/",
+			"title": "mms3/fpi/brst/l2/dis-moms/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms3_fpi_fast_des-dist",
+			"loc": "s3://helio-public/MMS/mms3/fpi/fast/l2/des-dist/",
+			"title": "mms3/fpi/fast/l2/des-dist/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms3_fpi_fast_des-moms",
+			"loc": "s3://helio-public/MMS/mms3/fpi/fast/l2/des-moms/",
+			"title": "mms3/fpi/fast/l2/des-moms/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms3_fpi_fast_dis-dist",
+			"loc": "s3://helio-public/MMS/mms3/fpi/fast/l2/dis-dist/",
+			"title": "mms3/fpi/fast/l2/dis-dist/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms3_fpi_fast_dis-moms",
+			"loc": "s3://helio-public/MMS/mms3/fpi/fast/l2/dis-moms/",
+			"title": "mms3/fpi/fast/l2/dis-moms/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms3_mec_brst_epht89d",
+			"loc": "s3://helio-public/MMS/mms3/mec/brst/l2/epht89d/",
+			"title": "mms3/mec/brst/l2/epht89d/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms3_mec_srvy_epht89d",
+			"loc": "s3://helio-public/MMS/mms3/mec/srvy/l2/epht89d/",
+			"title": "mms3/mec/srvy/l2/epht89d/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+			{
+			"id": "mms4_feeps_brst_electron",
+			"loc": "s3://helio-public/MMS/mms4/feeps/brst/l2/electron/",
+			"title": "mms4/feeps/brst/l2/electron/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms4_feeps_brst_ion",
+			"loc": "s3://helio-public/MMS/mms4/feeps/brst/l2/ion/",
+			"title": "mms4/feeps/brst/l2/ion/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms4_feeps_srvy_electron",
+			"loc": "s3://helio-public/MMS/mms4/feeps/srvy/l2/electron/",
+			"title": "mms4/feeps/srvy/l2/electron/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms4_feeps_srvy_ion",
+			"loc": "s3://helio-public/MMS/mms4/feeps/srvy/l2/ion/",
+			"title": "mms4/feeps/srvy/l2/ion/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms4_fgm_brst",
+			"loc": "s3://helio-public/MMS/mms4/fgm/brst/l2/",
+			"title": "mms4/fgm/brst/l2/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms4_fgm_srvy",
+			"loc": "s3://helio-public/MMS/mms4/fgm/srvy/l2/",
+			"title": "mms4/fgm/srvy/l2/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms4_fpi_brst_des-dist",
+			"loc": "s3://helio-public/MMS/mms4/fpi/brst/l2/des-dist/",
+			"title": "mms4/fpi/brst/l2/des-dist/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms4_fpi_brst_des-moms",
+			"loc": "s3://helio-public/MMS/mms4/fpi/brst/l2/des-moms/",
+			"title": "mms4/fpi/brst/l2/des-moms/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms4_fpi_brst_dis-dist",
+			"loc": "s3://helio-public/MMS/mms4/fpi/brst/l2/dis-dist/",
+			"title": "mms4/fpi/brst/l2/dis-dist/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms4_fpi_brst_dis-moms",
+			"loc": "s3://helio-public/MMS/mms4/fpi/brst/l2/dis-moms/",
+			"title": "mms4/fpi/brst/l2/dis-moms/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms4_fpi_fast_des-dist",
+			"loc": "s3://helio-public/MMS/mms4/fpi/fast/l2/des-dist/",
+			"title": "mms4/fpi/fast/l2/des-dist/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms4_fpi_fast_des-moms",
+			"loc": "s3://helio-public/MMS/mms4/fpi/fast/l2/des-moms/",
+			"title": "mms4/fpi/fast/l2/des-moms/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms4_fpi_fast_dis-dist",
+			"loc": "s3://helio-public/MMS/mms4/fpi/fast/l2/dis-dist/",
+			"title": "mms4/fpi/fast/l2/dis-dist/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms4_fpi_fast_dis-moms",
+			"loc": "s3://helio-public/MMS/mms4/fpi/fast/l2/dis-moms/",
+			"title": "mms4/fpi/fast/l2/dis-moms/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms4_mec_brst_epht89d",
+			"loc": "s3://helio-public/MMS/mms4/mec/brst/l2/epht89d/",
+			"title": "mms4/mec/brst/l2/epht89d/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		},
+		{
+			"id": "mms4_mec_srvy_epht89d",
+			"loc": "s3://helio-public/MMS/mms4/mec/srvy/l2/epht89d/",
+			"title": "mms4/mec/srvy/l2/epht89d/",
+			"startdate": "2015-06-01T00:00Z",
+			"enddate": "2021-12-31T23:59Z",
+			"modificationdate": "2023-03-08T00:00Z",
+			"indexformat": "csv",
+			"fileformat": "cdf"
+		}
+    ],
+    "status": {
+        "code": 1200,
+        "message": "OK request successful"
+    }
+}
