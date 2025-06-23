@@ -1,0 +1,10 @@
+{
+  "id" : "MMS",
+  "index": "file://test-heliocloud-datasets/MMS/",
+  "title" : "MMS data",
+  "description" : "Data from the Magnetospheric Multiscale Mission run by NASA ",
+  "resource" : "SPASE-1234567",
+  "creation" : "2015-09-01T00:00:00",
+  "citation": "<need an example of good citation format>",
+  "contact": "Dr. Soandso, ephemerus.sosandso@nasa.gov"
+}
