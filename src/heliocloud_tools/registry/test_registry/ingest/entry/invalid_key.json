@@ -1,0 +1,13 @@
+[
+  {
+    "asd": "MMS",
+    "asdf": "s3://test/base_data/resources/ingest/dataset_bucket",
+    "asdfg": "MMS data",
+    "asdfgh": "Data from the Magnetospheric Multiscale Mission run by NASA ",
+    "resource": "SPASE-1234567",
+    "creation": "2015-09-01T00:00:00",
+    "citation": "<need an example of good citation format>",
+    "contact": "Dr. Soandso, ephemerus.sosandso@nasa.gov",
+    "about_url": "https://www.nasa.gov"
+  }
+]

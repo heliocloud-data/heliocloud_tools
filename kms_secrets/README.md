@@ -1,3 +1,0 @@
-# KMS Secrets
-
-### TODO:
