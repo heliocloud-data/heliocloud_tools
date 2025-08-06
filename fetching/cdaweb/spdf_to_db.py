@@ -171,6 +171,7 @@ global_database = "sqlite3"
 # global_database = 'duckdb'
 if global_database == "sqlite3":
     import sqlite3
+    from collections import defaultdict
 elif global_database == "duckdb":
     import duckdb
 else:
@@ -237,6 +238,8 @@ def createDB_safe(db_name, debug=False):
     query = "CREATE UNIQUE INDEX IF NOT EXISTS idx_uni ON entries (fullname, filesize, status)"
     db_Cursor.execute(query)
     query = "CREATE INDEX IF NOT EXISTS idx_status ON entries (status)"
+    db_Cursor.execute(query)
+    query = "CREATE INDEX IF NOT EXISTS idx_queueset ON entries (queueset)"
     db_Cursor.execute(query)
 
     query = """
@@ -495,6 +498,9 @@ def parse_line(
         else:
             datayear = starttime[:4]
     queueset = dataid + ":" + datayear
+
+    #print("fake",dataid,indexbase,filename,x_regex,lastdate,lineset[0])
+
     if len(lineset) > 3 and lastdate != None and str2datetime(lineset[0]) > lastdate:
         status = 3
     else:
@@ -727,7 +733,10 @@ def ui_prompt_for_defaults(db_name):
 
 
 def str2datetime(cdastr):
-    dt = datetime.strptime(cdastr[:16], "%Y-%m-%dT%H:%M")
+    try:
+        dt = datetime.strptime(cdastr[:16], "%Y-%m-%dT%H:%M")
+    except:
+        dt = datetime.strptime(cdastr[:16], "%Y-%m-%d %H:%M")
     return dt
 
 
@@ -959,7 +968,7 @@ def generate_catalog(defaults, debug=False, allindices=False, limit=None,
             SELECT fullname FROM entries WHERE queueset='{qs}' and status=0 ORDER BY fullname DESC LIMIT 1
             );
             """
-            db_Cursor.execute(query) # fuck
+            db_Cursor.execute(query)
             result = [row[0] for row in db_Cursor.fetchall()]
             if result:
                 # because sometimes 'deletes' are in refresh queue but do not need an index
@@ -982,6 +991,7 @@ def generate_catalog(defaults, debug=False, allindices=False, limit=None,
             if catdirs != "":
                 os.makedirs(catdirs, exist_ok=True)
         entries = []
+        entries.append("id,start,stop,index,modification\n")
         for dataid in sorted(bases.keys()):
             index = gen_index_name(defaults, bases[dataid])
             start, stop = starts[dataid], stops[dataid]
@@ -1023,11 +1033,89 @@ def gen_index_name(defaults,indexbase,dataid=None,year=None,short=True):
         indexname = f"{staging}{hometop}/{dataid}_{year}.csv"
     else:
         indexname = f"{staging}{indexbase}/{dataid}_{year}.csv"
-
     if not indexname.startswith("s3://"):
-        os.makedirs(staging + indexbase, exist_ok=True)
+        #print(indexname,'fake','making it',os.path.dirname(indexname))
+        #os.makedirs(staging + indexbase, exist_ok=True)
+        os.makedirs(os.path.dirname(indexname), exist_ok=True)
     return indexname
 
+# fake
+
+def process_and_write_index(queueset, rows, regex_base, regex_pattern, defaults):
+    dataid, year = queueset.split(":")
+    fdata = []
+    endtime = None
+    priorindex = "ignore"
+    for fullname, filename, filesize, starttime in rows:
+        dataid, indexbase, x_regex = cxc.extract_regex(
+            regex_base, regex_pattern, fullname
+        )
+        if starttime is None:
+            if priorindex != indexbase:
+                print("Error extracting time from", filename)
+            priorindex = indexbase
+            continue
+        fullpath = defaults["dest_prefix"] + fullname
+        if endtime is None:
+            endtime = starttime
+        fdata.append(f"{starttime},{endtime},{fullpath},{filesize}\n")
+        endtime = starttime
+    fdata.append("#start, stop, datakey, filesize\n")
+    fdata.reverse()
+
+    indexname = gen_index_name(defaults, indexbase, dataid, year)
+    if not indexname.startswith("s3://"):
+        os.makedirs(os.path.dirname(indexname), exist_ok=True)
+    with smart_open.open(indexname, "w") as fout:
+        fout.writelines(fdata)
+
+def botched_generate_indices(defaults, debug=False, limit=None):
+    conn = sqlite3.connect(defaults["db_name"])
+    cursor = conn.cursor()
+
+    regex_base, regex_pattern = cxc.load_fromxml(
+        defaults["xml_path"], strip_me=defaults["strip_me"]
+    )
+
+    query = """
+        SELECT queueset, fullname, filename, filesize, starttime
+        FROM entries
+        WHERE status=0
+        ORDER BY queueset, filename DESC
+    """
+    if limit != None:
+        query += f" LIMIT {limit}"
+    cursor.execute(query)
+
+    current_qs = None
+    current_rows = []
+    batch_size = 1000
+    icount = 0
+    now = time.time()
+    while True:
+        rows = cursor.fetchmany(batch_size)
+        if not rows:
+            break
+        for qs, fullname, filename, filesize, starttime in rows:
+            if current_qs is None:
+                current_qs = qs
+            if qs != current_qs:
+                process_and_write_index(current_qs, current_rows, regex_base, regex_pattern, defaults)
+                current_qs = qs
+                current_rows = []
+                icount += 1
+                if debug and icount % 100 == 0:
+                    print(f"  creating {icount} indices in time {time.time()-now} s")
+            current_rows.append((fullname, filename, filesize, starttime))
+
+    # Final group flush
+    if current_rows:
+        process_and_write_index(current_qs, current_rows, regex_base, regex_pattern, defaults)
+
+    conn.close()
+    return 0, [] # fake, need realy errorcount, track_indices
+
+#fake
 
 def generate_indices(defaults, debug=False, limit=None):
     """Generates or re-generates the final cloudcatalog indices.
@@ -1048,8 +1136,7 @@ def generate_indices(defaults, debug=False, limit=None):
         query += f" LIMIT {limit}"
     db_Cursor.execute(query)
     rowset = db_Cursor.fetchall()
-    if debug:
-        print(f"\tRegenerating {len(rowset)} indices...")
+    print(f"\t(Re)generating {len(rowset)} indices...")
     # walk through each mission/year combo to make a new index
     errorcount = 0
     errorlist = []
@@ -1064,11 +1151,16 @@ def generate_indices(defaults, debug=False, limit=None):
         db_Cursor.execute(query)
         fdata = []
         endtime = None
+        """
+        Faster approach: read all into a numpy, re-order cols, dump as unit?
+        """
         for item in db_Cursor.fetchall():
             fullname, filename, filesize, starttime = item[0], item[1], item[2], item[3]
-            dataid, indexbase, x_regex = cxc.extract_regex(
-                regex_base, regex_pattern, fullname
-            )
+            if endtime == None:
+                # only need this once per queueset
+                dataid, indexbase, x_regex = cxc.extract_regex(
+                    regex_base, regex_pattern, fullname
+                )
             if starttime == None:
                 if priorindex != indexbase:
                     # only print one warning per set of dataid files
@@ -1094,13 +1186,73 @@ def generate_indices(defaults, debug=False, limit=None):
             track_indices.append( (dataid,year) )
             icount += 1
             indexname = gen_index_name(defaults,indexbase,dataid,year)
-            
             if not indexname.startswith("s3://"):
                 index_dirs = os.path.dirname(indexname)
                 if index_dirs:
                     os.makedirs(index_dirs, exist_ok=True)
             with smart_open.open(indexname, "w") as fout:
                 fout.writelines(fdata)
+            if debug and icount % 100 == 0:
+                print(f"    created {icount} of {len(rowset)} indices in {time.time()-now} seconds")
+    db_Conn.close()
+    if icount > 0:
+        if debug:
+            print(
+                f"\t... success making %d indices totaling %d files, took %.2f minutes"
+                % (icount, irows, (time.time() - now) / 60)
+            )
+    elif errorcount > 0:
+        print(f"Error, {errorcount} files could not be indexed, please redo.")
+    return errorcount, track_indices
+
+def slower_generate_indices(defaults, debug=False, limit=None):
+    """Generates or re-generates the final cloudcatalog indices.
+    CDAWeb forces all dataIDs to uppercase, so we added a flag for that.
+    Earlier variant guessed at IDs and did reasonable date work.
+    Now we use the all.xml file provided by CDAWeb to better match.
+    """
+    dest = defaults["dest_prefix"]
+    now = time.time()
+
+    regex_base, regex_pattern = cxc.load_fromxml(
+        defaults["xml_path"], strip_me=defaults["strip_me"]
+    )
+
+    db_Conn, db_Cursor = connectDB(defaults["db_name"])
+    query = "SELECT dataid, year FROM refresh_indices ORDER by dataid ASC"
+    if limit != None:
+        query += f" LIMIT {limit}"
+    db_Cursor.execute(query)
+    rowset = db_Cursor.fetchall()
+    print(f"\t(Re)generating {len(rowset)} indices...")
+    # walk through each mission/year combo to make a new index
+    errorcount = 0
+    errorlist = []
+    icount = 0
+    irows = 0
+    track_indices = []
+    priorindex = "ignore"
+    import pandas as pd
+    for row in rowset:
+        dataid, year = row[0], row[1]
+        queueset = f"{dataid}:{year}"
+        query = f"SELECT starttime, fullname, filesize from entries WHERE status=0 AND queueset='{queueset}' ORDER by starttime"
+        df = pd.read_sql_query(query, db_Conn)
+        df['endtime'] = df['starttime'].shift(-1)
+        df['fullname'] = dest + df['fullname']
+        df.index.name = '#'
+        fullname = df.loc[df.index[0],'fullname']
+        dataid, indexbase, x_regex = cxc.extract_regex(
+            regex_base, regex_pattern, fullname
+        )
+        indexname = gen_index_name(defaults,indexbase,dataid,year)
+        df.to_csv(indexname,index=True)
+        track_indices.append( (dataid,year) )
+        icount += 1
+        #with smart_open.open(indexname, "w") as fout:
+        #        fout.writelines(fdata)
+        if debug and icount % 100 == 0:
+            print(f"    created {icount} indices in {time.time()-now} seconds")
     db_Conn.close()
     if icount > 0:
         if debug:
@@ -1204,7 +1356,7 @@ def prod(
     if steps[2]:
         errorstat, track_indices = generate_indices(defaults, debug=debug, limit=limit)
         # note 'track_indices' can be passed to next step as a perf aid
-        track_indices = None # fuck
+        track_indices = None # fake
     if steps[3]:
         generate_catalog(defaults, debug=debug, limit=limit, track_indices=track_indices)
     if steps[4]:
@@ -1221,7 +1373,9 @@ def ingest_s3_inventory(
         debug=True,
         reorder=None,
         resub=(r"^spdf/cdaweb/", r"pub/"),
-        limit=None
+        staging_prefix=None,
+        limit=None,
+        ingest=True
 ):
     # variant of prod sans copying, takes a filelist of ".*, filesize, s3key"
     # to CREATE a new DB with all of them as 'status=0' (copied over),
@@ -1230,16 +1384,22 @@ def ingest_s3_inventory(
     #     import reorder_csv_columns as r
     #     r.reorder_csv_columns("manifest.csv","manifestR.csv",[1, 0])
     # (or similar)
-    # in this case, that means give the argument reorder=[0,1]
+    # in this case, that means give the argument reorder=[0,1] or similar
+    # For a default S3 MANIFEST.csv, the reorder matrix is [0,3,4,5,6,7,8,2,1]
     # This will copy the original under a new name (thus safe)
     # It also safely versions the original database so it can start clean,
     # allowing for offline recovery if needed.
+    # if 'ingest', it reads in a manifest, if not, it just creates indices
+    # from the existing DB
     defaults = default_defaults()
     defaults["db_name"] = db_name
     defaults["filelist"] = infile
     defaults["strip_me"] = strip_me
-    version_file(defaults["db_name"])
-    createDB_safe(defaults["db_name"])
+    if not staging_prefix == None:
+        defaults["staging_prefix"] = staging_prefix
+    if ingest:
+        version_file(defaults["db_name"])
+        createDB_safe(defaults["db_name"])
     now = time.time()
     if reorder != None:
         import reorder_csv_columns as r
@@ -1249,9 +1409,11 @@ def ingest_s3_inventory(
         defaults["filelist"] = infile
         if debug:
             print("Reordered input CSV, took %.2f minutes" % ((time.time() - now) / 60))
-    prod(defaults, debug=debug, steps=[True, False, False, False, False],limit=limit)
+    if ingest:
+        prod(defaults, debug=debug, steps=[True, False, False, False, False],limit=limit)
     db_unsafe_mark_all_as_copied(defaults["db_name"])
-    prod(defaults, debug=debug, steps=[False, False, True, True, False],limit=limit)
+    db_missions_to_queue(db_file=defaults["db_name"],status=0) # force index regens later
+    prod(defaults, debug=debug, steps=[False, False, True, True, True],limit=limit)
 
 
 def default_defaults(filelist=None, dest_prefix=None):
@@ -1316,7 +1478,9 @@ def ingest_s3manifest_nocopy(db_name,debug=True,limit=None):
         reorder = None
     else:
         infile="manifest.csv"
-        reorder = [1,0]
+        #reorder = [1,0]
+        reorder = [3,0,4,5,6,7,8,2,1]
+
     ingest_s3_inventory(db_name=db_name,debug=debug,infile=infile,reorder=reorder,limit=limit)
     
 def test_dbonly():
