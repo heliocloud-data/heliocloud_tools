@@ -12,11 +12,10 @@ we do a best guess on YYYYMMDD.
 
 """
 
-def load_fromxml(homepath = ".", strip_me = None):
+def load_fromxml(homepath = ".", strip_me = None, ensure_prefix = None):
     # Define file name and URL
     FILE_NAME = f"{homepath}/all.xml"
     FILE_URL = "https://spdf.gsfc.nasa.gov/pub/catalogs/all.xml"
-
     # Check if file exists locally; if not, download it
     if not os.path.exists(FILE_NAME):
         print(f"Downloading {FILE_NAME}...")
@@ -54,6 +53,8 @@ def load_fromxml(homepath = ".", strip_me = None):
                     url_cleaned = re.sub(r"https://.*?.nasa.gov/", "", url_text)  # Remove web address
                     if strip_me != None:
                         url_cleaned = re.sub(f"^{strip_me}","",url_cleaned)
+                    if ensure_prefix != None and not url_cleaned.startswith(ensure_prefix):
+                        url_cleaned = ensure_prefix + url_cleaned
                     regex_base[dataid] = url_cleaned
                     regex_pattern[dataid] = strftime_to_regex(filenaming)
                     
@@ -100,7 +101,7 @@ def efficient_regex(metadata, fullname, filename):
         # generate new entries on the fly
         x_reg = guess_regex(filename)
         regs = [x_reg]
-        dataid_m = re.match(".*_\d{4}",basename)
+        dataid_m = re.match(r".*_\d{4}",basename)
         if dataid_m:
             dataid = dataid_m[0][:-5].upper()
         else:
@@ -141,38 +142,56 @@ def efficient_parse_line(line, metadata):
 
 
 
-
-
-def extract_regex(regex_base, regex_pattern, fullname):
-    # Function to retrieve base and regex by dataid aka serviceprovider_ID
+def extract_just_dataid(fullname, shortprefix = None):
     basename = os.path.basename(fullname)
-    dataid_m = re.match(".*_\d{4}",basename)
+    dataid_m = re.match(r".*_\d{4}",basename)
     if dataid_m != None:
         dataid = dataid_m[0][:-5].upper()
+    else:
+        dataid = None
+    return dataid, basename
+
+def best_indexdir(fullname, short_prefix = None):
+    """ shortform is standard prefix + just the next field only
+           e.g. spdf/cdaweb/data/ace/cris/level_2_cdaweb/cris_h2/*.cdf
+           resolves to either 'spdf/cdaweb/data/ace/cris/level_2_cdaweb'
+           or with 'shortprefix='spdf/cdaweb/data/', is 'spdf/cdaweb/data/ace'
+    """
+    indexdir = os.path.dirname(fullname)
+    if short_prefix != None:
+        blen = min(len(short_prefix.split('/')),len(indexdir.split('/')))
+        indexdir = '/'.join(indexdir.split('/')[:blen])
+        indexdir += '/indices'
+    return indexdir
+
+def extract_regex(regex_base, regex_pattern, fullname):
+    # Function to retrieve basedir and regex by dataid aka serviceprovider_ID
+    dataid, basename = extract_just_dataid(fullname)
+    if dataid != None:
         try:
             x_regex = regex_pattern[dataid]
-            base = regex_base[dataid]
-            return dataid, base, x_regex
+            basedir = regex_base[dataid]
+            return dataid, basedir, x_regex
         except:
             try:
                 x_regex = regex_pattern[dataid+"_alt"]
-                base = regex_base[dataid+"_alt"]
-                return dataid, base, x_regex
+                basedir = regex_base[dataid+"_alt"]
+                return dataid, basedir, x_regex
             except:
                 pass
-    dataid, base, x_regex = slow_extract_regex(regex_base, regex_pattern, fullname)
+    dataid, basedir, x_regex = slow_extract_regex(regex_base, regex_pattern, fullname)
     if dataid != None:
-        return dataid, base, x_regex
+        return dataid, basedir, x_regex
     # not in 'all.xml', so let us add it
     x_regex = guess_regex(basename)
-    dataid_m = re.match(".*_\d{4}",basename)
+    dataid_m = re.match(r".*_\d{4}",basename)
     if dataid_m == None:
         return None, None, None
     dataid = dataid_m[0][:-5].upper()
-    base = os.path.dirname(fullname)
-    regex_base[dataid] = base
+    basedir = os.path.dirname(fullname)
+    regex_base[dataid] = basedir
     regex_pattern[dataid] = x_regex
-    return dataid, base, x_regex
+    return dataid, basedir, x_regex
 
 def slow_extract_regex(regex_base, regex_pattern, fullname):
     # Function to retrieve base and regex by dataid aka serviceprovider_ID
@@ -282,7 +301,7 @@ def test_case():
     regex_base, regex_pattern = load_fromxml()
     x_id, x_base, x_regex = extract_regex(regex_base, regex_pattern, fullname)
     if x_regex:
-        x_datetime, failcheck = extract_datetime(os.path.basename(fullname), x_regex)
+        x_datetime = extract_datetime(os.path.basename(fullname), x_regex)
         print("Extracted Datetime:", x_datetime)
     else:
         print("No valid filenaming pattern found.")
