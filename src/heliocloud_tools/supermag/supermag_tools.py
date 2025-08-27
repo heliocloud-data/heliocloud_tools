@@ -35,7 +35,6 @@ dmap, err = stream_dmap_from_s3(s3uri)
 
 df = pydmap_to_dataframe(mydmap, lat_min, lat_max, lon_min, lon_max)
     Utility to convert pydmap numpy array to a pandas DataFrame
-
 """
 
 import io
@@ -51,7 +50,6 @@ try:
     from botocore.client import Config
 except:
     print("S3 read not enabled, please install boto3, botocore")
-
 
 def plot_station_timeseries(
     mydmap,
@@ -134,6 +132,8 @@ def test_plot_station_timeseries(mydmap, station=None):
     return True
 
 
+=======
+
 def all_stations_heatmap(mydmap, components=["north", "east", "vertical"]):
     """Plots all supermag stations as a heat map, using pydmap numpy array"""
 
@@ -181,7 +181,6 @@ def get_all_stations(mydmap):
     """
     return mydmap["grdvec.id"][0]
 
-
 def get_stations_in_box(mydmap, lat_min, lat_max, lon_min, lon_max):
     """Returns list of stations and their ids from the pydmap numpy array
     that are in the given lat/lon box
@@ -209,7 +208,6 @@ def test_get_stations_in_box(mydmap):
     ids, indices = get_stations_in_box(mydmap, lat_min, lat_max, lon_min, lon_max)
     print(f"\tFound {len(ids)} stations in box {lat_min}-{lat_max},{lon_min}-{lon_max}")
     return True
-
 
 def time_series_for_stations(mydmap, station_indices):
     """Returns the 3 vector elements from the pydmap numpy array for the
@@ -247,9 +245,9 @@ def test_time_series_for_stations(mydmap):
     n, e, v = time_series_for_stations(mydmap, indices)
     return True
 
-
 def get_id_in_dmap(mydmap, station_code):
     """Search on a given station code and find its index in the
+
     full station list from the pydmap numpy array, such that you can
     then fetch the data for that index
     """
@@ -266,9 +264,9 @@ def test_get_id_in_dmap(mydmap):
     print("\tFound sample ID for 'UPN',", get_id_in_dmap(mydmap, "UPN"))
     return True
 
-
 def pydmap_to_dataframe(mydmap, lat_min=None, lat_max=None, lon_min=None, lon_max=None):
     """Utility to convert pydmap numpy array to a pandas DataFrame"""
+
     times = pd.to_datetime(mydmap["time.epoch"], unit="s")
     ids_all = mydmap["grdvec.id"]
     lats_all = mydmap["grdvec.vec.lat"]
@@ -327,13 +325,13 @@ def test_pydmap_to_dataframe(mydmap):
     print("\tSample dataframe head:", df_filtered.head())
     return True
 
-
 def stream_dmap_from_s3(s3uri):
     """
     Bundles together fetching a DataMap file in S3 (anon/no-key needed)
     and returns the dmap, or None if it fails
     """
     # S3 read specific bytes
+
     s3c = boto3.client("s3", config=Config(signature_version=UNSIGNED))
     mybucket = s3uri.split("/")[2]
     mykey = "/".join(s3uri.split("/")[3:])
@@ -361,12 +359,12 @@ def test_stream_dmap_from_s3(s3uri=None):
             test_plot_station_timeseries(mydmap, station)
         return True
 
-
 def test_all(fname=None, s3uri=None):
     if fname == None:
         fname = "sample_data/20141231.supermag.grdvec.60s.rev-0006.dmap"
     if s3uri == None:
         s3uri = "s3://gov-nasa-hdrl-data1/contrib/jhuapl/supermag/mag.01s/global/2020/20200201/2020020102.supermag.grdvec.01s.rev-0006.dmap"
+
     mydmap, err = dmap.read_datamap(fname)
     if mydmap == None:
         print("Error in dmap.read_datamap()")
@@ -405,3 +403,4 @@ def test_all(fname=None, s3uri=None):
 if __name__ == "__main__":
     test_all()
     # test_all("2020020102.supermag.grdvec.01s.rev-0006.dmap")
+
