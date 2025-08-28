@@ -1,0 +1,16 @@
+Everything you'll ever need to know about this package.
+
+PyHC self-evaluation:
+
+- name: "my-pyhc-package"
+  code: "https://github.com/heliophysicsPy/pyhc-repo-template"
+  description: "An awesome Python package that will transform heliophysics forever."
+  docs: "https://github.com/heliophysicsPy/pyhc-repo-template/tree/main/docs"
+  contact: "Author Names"
+  keywords: ["general", "solar"]
+  community: ["https://img.shields.io/badge/Good-brightgreen.svg", "Good"]
+  documentation: ["https://img.shields.io/badge/Requires%20improvement-red.svg", "Requires improvement"]
+  testing: ["https://img.shields.io/badge/Partially%20met-orange.svg", "Partially met"]
+  software_maturity: ["https://img.shields.io/badge/Good-brightgreen.svg", "Good"]
+  python3: ["https://img.shields.io/badge/Good-brightgreen.svg", "Good"]
+  license: ["https://img.shields.io/badge/Good-brightgreen.svg", "Good"]
