@@ -1,6 +1,4 @@
 # Py Script to create a shell script for copying between S3 buckets
-
-
 def make_copy_script(
     file_name: str,
     src: str,
@@ -10,39 +8,41 @@ def make_copy_script(
     dryrun: bool = False,
     metadata: bool = True,
 ):
+    line_count = 0
+    # Stream the file line by line instead of reading all into memory
     with open(file_name, "r") as f:
-        lines = f.readlines()
+        for idx, line in enumerate(f):
+            line = line.strip()
+            if not line:
+                continue
+            line_count += 1
 
-    print(f"# Number of files to copy: {len(lines)}")
-    # Combine the parameters and create the cp command
-    copy_list = []
-    if dryrun and metadata:
-        for line in lines:
-            copy_list.append(
-                f"aws s3 cp s3://{src}/{line[:-1]} s3://{dst}/{line[:-1]} --dryrun --metadata-directive COPY >> ./copy_log.txt &"
-            )
-    elif metadata and not dryrun:
-        for line in lines:
-            copy_list.append(
-                f"aws s3 cp s3://{src}/{line[:-1]} s3://{dst}/{line[:-1]} --metadata-directive COPY >> ./copy_log.txt &"
-            )
-    elif dryrun and not metadata:
-        for line in lines:
-            copy_list.append(
-                f"aws s3 cp s3://{src}/{line[:-1]} s3://{dst}/{line[:-1]} --dryrun >> ./copy_log.txt &"
-            )
-    elif not dryrun and not metadata:
-        for line in lines:
-            copy_list.append(
-                f"aws s3 cp s3://{src}/{line[:-1]} s3://{dst}/{line[:-1]} >> ./copy_log.txt &"
-            )
+            if dryrun and metadata:
+                cmd = (
+                    f"aws s3 cp s3://{src}/{line} s3://{dst}/{line} "
+                    f"--dryrun --metadata-directive COPY >> ./copy_log.txt &"
+                )
+            elif metadata and not dryrun:
+                cmd = (
+                    f"aws s3 cp s3://{src}/{line} s3://{dst}/{line} "
+                    f"--metadata-directive COPY >> ./copy_log.txt &"
+                )
+            elif dryrun and not metadata:
+                cmd = (
+                    f"aws s3 cp s3://{src}/{line} s3://{dst}/{line} "
+                    f"--dryrun >> ./copy_log.txt &"
+                )
+            elif not dryrun and not metadata:
+                cmd = (
+                    f"aws s3 cp s3://{src}/{line} s3://{dst}/{line} "
+                    f">> ./copy_log.txt &"
+                )
 
-    # Divide the commands into chunks
-    for idx, command in enumerate(copy_list):
-        # "Thread by sleeping", e.g. group every J calls by inserting a sleep statement
-        print(command)
-        if int(idx + 1) % concurrent_jobs == 0:
-            print(f"sleep {sleep}")
+            print(cmd)
+            if int(idx + 1) % concurrent_jobs == 0:
+                print(f"sleep {sleep}")
+
+    print(f"# Number of files to copy: {line_count}")
 
 
 if __name__ == "__main__":
