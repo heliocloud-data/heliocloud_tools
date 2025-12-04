@@ -160,7 +160,7 @@ if [ "$MODE" = "1" ]; then
 
     diff spdf_prev spdf_curr >   spdf_diff
     egrep "^< " spdf_diff >   spdf_deleted_files
-    egrep "^> " spdf_diff | awk '{print $NF}' > fetchme.list
+    egrep "^> " spdf_diff | awk '{print $NF}' | sed 's:^pub/::' > fetchme.list
 
     step_time "Created fetchme.list using prior CDAWeb list"
     exit 0

@@ -1,3 +1,14 @@
+"""
+Simple routine to re-order the columns in a CSV file.
+
+Usage: reorder_csv_columns(input_file, output_file, new_order, resub=None)
+  where order is e.g. [1, 0, 2] to put the original 0,1,2 in order 1,0,2
+
+  optionally, resub is a list of 2 regexes to apply to the last of the
+  new columns
+    e.g.  resub=(r"^spdf/cdaweb/", r"pub/")
+"""
+
 import pandas as pd
 
 def reorder_csv_columns(input_file, output_file, new_order, resub=None):
