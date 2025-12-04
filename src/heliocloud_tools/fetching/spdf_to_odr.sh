@@ -115,6 +115,9 @@ step_time() {
 TMP_NEW="/tmp/new_paths.txt"
 TMP_OLD="/tmp/old_paths.txt"
 
+# version the output 'fetchme.list' first
+[ -f fetchme.list ] && mv fetchme.list fetchme.list.$(date +%Y%m%d_%H%M)
+
 # part 1
 # Example script to read the SPDF filelist and new download CDFs and netCDFs since the last time the script is run 
 # original 2016 June 2 Robert.M.Candey@nasa.gov, updated 2022 June 7
