@@ -1,3 +1,5 @@
+# Minor tool to add a CSV # with item keynames in files that are just bare data
+
 file_list_path = 'badfiles'  # contains one filename per line
 new_first_line = "#start, stop, key, filesize\n"
 
