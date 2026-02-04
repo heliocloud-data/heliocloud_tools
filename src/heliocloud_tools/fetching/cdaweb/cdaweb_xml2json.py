@@ -3,6 +3,11 @@ Convert CDAWeb XML into catalog JSON objects using mappings:
 
 usage: python cdaweb_xml2json.py all.xml -o catalog-cdaweb.json --pretty
 
+Known bug: if CDAWeb XML elements have start/stop times of 'AUTO' or 'Recent'
+these get mapped to JSON null, which might break downstream software that
+is expecting ISO times.
+
+XML-to-JSON mapping is:
 serviceprovider_ID -> id
 description -> title
 timerange_start -> start (ISO: YYYY-MM-DDTHH:MM:SS.SSSZ)
@@ -31,6 +36,9 @@ PUB_PREFIX = "https://cdaweb.gsfc.nasa.gov/pub/"
 S3_PREFIX = "s3://gov-nasa-hdrl-data1/spdf/cdaweb/"
 ABOUT_PREFIX = "https://cdaweb.gsfc.nasa.gov/misc/"
 
+# Require filenaming to end with one of these extensions (at end-of-string)
+FILENAME_EXT_RE = re.compile(r"\.(cdf|nc|fits|fts)$", re.IGNORECASE)
+
 
 def _local(tag: str) -> str:
     return tag.split("}", 1)[-1] if "}" in tag else tag
@@ -57,7 +65,6 @@ def _get(elem: ET.Element, attr: str, child_localname: str) -> Optional[str]:
 
 
 def _title_from_top_description_short(dataset: ET.Element) -> Optional[str]:
-    # <description short="..."> as a *direct* child of <dataset>
     for desc in _find_direct_child(dataset, "description"):
         short = desc.attrib.get("short")
         if short:
@@ -82,10 +89,16 @@ def _parse_time_to_iso_z(value: str) -> str:
     fmts = [
         "%Y-%m-%dT%H:%M:%S.%f",
         "%Y-%m-%dT%H:%M:%S",
+        "%Y-%m-%d",
     ]
     for fmt in fmts:
         try:
-            dt = datetime.strptime(s_noz, fmt).replace(tzinfo=tz)
+            if s_noz.startswith('AUTO') or s_noz.startswith('Recent'):
+                return None
+            dt = datetime.strptime(s_noz, fmt)
+            if fmt == "%Y-%m-%d":
+                dt = dt.replace(hour=0,minute=0,second=0,microsecond=0)
+            dt = dt.replace(tzinfo=tz)
             ms = int(dt.microsecond / 1000)
             return (
                 dt.replace(microsecond=ms * 1000)
@@ -168,6 +181,10 @@ def xml_to_catalog(xml_path: str) -> List[Dict[str, Any]]:
             if stop_raw is None:
                 stop_raw = _get(access, "timerange_stop", "timerange_stop")
 
+        # NEW: filter by filenaming suffix
+        if not regex_pat or not FILENAME_EXT_RE.search(regex_pat):
+            continue
+
         if not url:
             continue
 
@@ -180,7 +197,7 @@ def xml_to_catalog(xml_path: str) -> List[Dict[str, Any]]:
             "index": index,  # 3rd element
             "start": _parse_time_to_iso_z(start_raw) if start_raw else None,
             "stop": _parse_time_to_iso_z(stop_raw) if stop_raw else None,
-            "regex": regex_pat or "",
+            "regex": regex_pat,
             "subpath": subpath,
             "resource": url,
             "contact": _dataset_contact(elem) or "",
@@ -188,7 +205,8 @@ def xml_to_catalog(xml_path: str) -> List[Dict[str, Any]]:
             "collections": ["CDAWeb"],
         }
 
-        obj = {k: v for k, v in obj.items() if v is not None}
+        #obj = {k: v for k, v in obj.items() if v is not None}
+        obj = {k: v for k, v in obj.items()}
         catalog.append(obj)
 
     return catalog
@@ -203,7 +221,6 @@ def main() -> None:
 
     catalog_items = xml_to_catalog(args.xml)
 
-    # Wrap with requested top-level header + requested stub footer
     output = {
         "Cloudy": "1.1",
         "endpoint": "s3://gov-nasa-hdrl-data1/",
