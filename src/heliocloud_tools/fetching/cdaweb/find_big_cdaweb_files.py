@@ -1,3 +1,6 @@
+""" Given a CDAWeb filelist.gz, tells us how many files >5GB exist
+"""
+
 import gzip
 import pickle
 bigfiles = []
