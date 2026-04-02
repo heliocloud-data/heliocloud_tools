@@ -247,6 +247,7 @@ def health():
     """Health check for monitoring."""
     return "OK", 200
 
+
 @app.route("/")
 def root_handler():
     """Handle calls to the root of api.heliocloud.org"""
