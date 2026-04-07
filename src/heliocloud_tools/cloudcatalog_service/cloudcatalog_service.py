@@ -11,7 +11,7 @@ Behavior:
 - Optional ?source=<bucket> defaults to gov-nasa-hdrl-data1
 
 Example:
-https://heliocloud.org/cloudcatalog?id=[DATAID]&format=json&source=[S3 bucket]
+https://api.heliocloud.org/cloudcatalog?id=[DATAID]&format=json&source=[S3 bucket]
 """
 
 from __future__ import annotations
@@ -145,7 +145,7 @@ def render_error_html(title: str, message: str, http_code: int) -> str:
 
 def render_landing_page() -> str:
     """Render the default landing page."""
-    example = "/cloudcatalog?id=DATASET123&format=json" f"&source={DEFAULT_SOURCE}"
+    example = "https://api.heliocloud.org/cloudcatalog?id=DATASET123&format=json" f"&source={DEFAULT_SOURCE}"
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -242,6 +242,24 @@ def add_security_headers(resp: Response) -> Response:
     return resp
 
 
+@app.route("/health")
+def health():
+    """Health check for monitoring."""
+    return "OK", 200
+
+
+@app.route("/")
+def root_handler():
+    """Handle calls to the root of api.heliocloud.org"""
+    return make_response(
+        render_landing_page(),
+        200,
+        {
+            "Content-Type": "text/html;charset=utf-8"
+        },
+    )
+
+
 @app.route("/cloudcatalog", methods=["GET"])
 def cloudcatalog_handler():
     """
@@ -323,6 +341,7 @@ def cloudcatalog_handler():
         500,
         {"Content-Type": "text/html; charset=utf-8"},
     )
+
 
 
 if __name__ == "__main__":
