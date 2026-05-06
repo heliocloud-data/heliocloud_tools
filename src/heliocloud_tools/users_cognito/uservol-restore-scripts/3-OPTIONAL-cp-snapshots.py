@@ -11,7 +11,7 @@ def get_snapshot(ec2, snapshot_id):
 
 
 def build_tags(snapshot, extra_tags=None):
-    tags = snapshot.get("Tags", [])
+    tags = snapshot.get("Tags") or []
 
     tags.append({
         "Key": "CopiedAt",
@@ -24,14 +24,23 @@ def build_tags(snapshot, extra_tags=None):
     return tags
 
 
-def copy_snapshot(ec2_dest, snapshot, source_region):
-    kwargs = {
-        "SourceSnapshotId": snapshot["SnapshotId"],
-        "SourceRegion": source_region,
-        "Description": snapshot.get("Description", "")
-    }
+def allow_cross_account_copy(ec2_source, snapshot_id, dest_account_id):
+    print(f"Sharing snapshot {snapshot_id} with account {dest_account_id}")
 
-    response = ec2_dest.copy_snapshot(**kwargs)
+    ec2_source.modify_snapshot_attribute(
+        SnapshotId=snapshot_id,
+        Attribute="createVolumePermission",
+        OperationType="add",
+        UserIds=[dest_account_id]
+    )
+
+
+def copy_snapshot(ec2_dest, snapshot, source_region):
+    response = ec2_dest.copy_snapshot(
+        SourceSnapshotId=snapshot["SnapshotId"],
+        SourceRegion=source_region,
+        Description=snapshot.get("Description", "")
+    )
     return response["SnapshotId"]
 
 
@@ -42,13 +51,13 @@ def tag_snapshot(ec2_dest, snapshot_id, tags):
     )
 
 
-def process_csv(file_path, source_ec2, dest_ec2, source_region):
-    # 🔹 Create backup
+def process_csv(file_path, source_ec2, dest_ec2, source_region, source_account, dest_account):
+    # Backup CSV first
     backup_path = file_path + ".bak.cp"
     shutil.copyfile(file_path, backup_path)
     print(f"Backup created: {backup_path}")
 
-    # 🔹 Read all rows into memory
+    # Load CSV
     with open(file_path, newline="") as csvfile:
         reader = csv.DictReader(csvfile)
         rows = list(reader)
@@ -57,14 +66,26 @@ def process_csv(file_path, source_ec2, dest_ec2, source_region):
     if "snap_id" not in fieldnames:
         raise ValueError("CSV must contain 'snap_id' column")
 
-    # 🔹 Process and update rows
+    same_account = source_account == dest_account
+
     for row in rows:
         old_snapshot_id = row["snap_id"]
 
         print(f"\nProcessing snapshot: {old_snapshot_id}")
+
         try:
             snapshot = get_snapshot(source_ec2, old_snapshot_id)
 
+            # IMPORTANT:
+            # Cross-account requires permission BEFORE copy
+            if not same_account:
+                allow_cross_account_copy(
+                    source_ec2,
+                    old_snapshot_id,
+                    dest_account
+                )
+
+            # Copy snapshot (region + account aware via permissions)
             new_snapshot_id = copy_snapshot(
                 dest_ec2,
                 snapshot,
@@ -73,18 +94,19 @@ def process_csv(file_path, source_ec2, dest_ec2, source_region):
 
             print(f"Copied -> {new_snapshot_id}")
 
+            # Tag copied snapshot
             tags = build_tags(snapshot)
             tag_snapshot(dest_ec2, new_snapshot_id, tags)
 
             print(f"Tagged snapshot {new_snapshot_id}")
 
-            # 🔹 Replace old ID with new one
+            # Update CSV in-place
             row["snap_id"] = new_snapshot_id
 
         except Exception as e:
             print(f"FAILED {old_snapshot_id}: {str(e)}")
 
-    # 🔹 Write updated rows back to original file
+    # Write updated CSV back
     with open(file_path, "w", newline="") as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
@@ -94,30 +116,22 @@ def process_csv(file_path, source_ec2, dest_ec2, source_region):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Copy EC2 snapshots across region/account")
+    parser = argparse.ArgumentParser(
+        description="Copy EC2 snapshots across regions and accounts"
+    )
 
-    parser.add_argument("-f", "--input-file", required=True, help="Path to snapshot manifest CSV")
-    parser.add_argument("-src-region", required=True, dest="src_region")
-    parser.add_argument("-dest-region", required=True, dest="dest_region")
-    parser.add_argument("-src-profile", default=None, dest="src_profile")
-    parser.add_argument("-dest-profile", default=None, dest="dest_profile")
+    parser.add_argument("-f", "--input-file", required=True)
+
+    parser.add_argument("--src-region", required=True)
+    parser.add_argument("--dest-region", required=True)
+
+    parser.add_argument("--src-account", required=True)
+    parser.add_argument("--dest-account", required=True)
 
     args = parser.parse_args()
 
-    # AWS sessions
-    session_source = boto3.Session(
-        profile_name=args.src_profile,
-        region_name=args.src_region
-    ) if args.src_profile else boto3.Session(
-        region_name=args.src_region
-    )
-
-    session_dest = boto3.Session(
-        profile_name=args.dest_profile,
-        region_name=args.dest_region
-    ) if args.dest_profile else boto3.Session(
-        region_name=args.dest_region
-    )
+    session_source = boto3.Session(region_name=args.src_region)
+    session_dest = boto3.Session(region_name=args.dest_region)
 
     ec2_source = session_source.client("ec2")
     ec2_dest = session_dest.client("ec2")
@@ -127,6 +141,8 @@ if __name__ == "__main__":
         ec2_source,
         ec2_dest,
         args.src_region,
+        args.src_account,
+        args.dest_account
     )
 
     print("\nCopying snapshots completed!")
