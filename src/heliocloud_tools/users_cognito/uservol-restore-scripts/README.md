@@ -12,7 +12,7 @@ The scripts are intended to be run in order as they complete they automate the w
 ### The python scripts require the following packages to run:
 - PyYAML
 - boto3
-#### To create a virtual environment: `$ python -m venv vol-restore`
+#### To create a virtual environment: `$ python3 -m venv vol-restore`
 #### Activation: `$ source vol-restore/bin/activate`
 #### pip install command: `pip install boto3 PyYAML`
 ---
