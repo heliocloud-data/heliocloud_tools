@@ -36,10 +36,10 @@ The scripts are intended to be run in order as they complete they automate the w
 	#### usage: 
 	```
 	$ python3 3-OPTIONAL-cp-snapshots.py -f user-vols<timestamp>.csv \
-		-src-region SRC_REGION \
-		-dest-region DEST_REGION \
-		-src-profile SRC_PROFILE \
-		-dest-profile DEST_PROFILE \
+		-src-region SOURCE_REGION \
+		-dest-region DESTINATION_REGION \
+		-src-account SOURCE_ACCOUNT_NUMBER \
+		-dest-account DESTINATION_ACCOUNT_NUMBER \
 	```
 	#### output: `None, the CSV is modified again to include the new snapshot IDs after the copy, backup is created.`
 ---
