@@ -26,7 +26,6 @@ def build_tags(snapshot, extra_tags=None):
 
 def allow_cross_account_copy(ec2_source, snapshot_id, dest_account_id):
     print(f"Sharing snapshot {snapshot_id} with account {dest_account_id}")
-
     ec2_source.modify_snapshot_attribute(
         SnapshotId=snapshot_id,
         Attribute="createVolumePermission",
@@ -66,8 +65,6 @@ def process_csv(file_path, source_ec2, dest_ec2, source_region, source_account, 
     if "snap_id" not in fieldnames:
         raise ValueError("CSV must contain 'snap_id' column")
 
-    same_account = source_account == dest_account
-
     for row in rows:
         old_snapshot_id = row["snap_id"]
 
@@ -76,21 +73,21 @@ def process_csv(file_path, source_ec2, dest_ec2, source_region, source_account, 
         try:
             snapshot = get_snapshot(source_ec2, old_snapshot_id)
 
-            # IMPORTANT:
-            # Cross-account requires permission BEFORE copy
-            if not same_account:
-                allow_cross_account_copy(
-                    source_ec2,
-                    old_snapshot_id,
-                    dest_account
-                )
-
-            # Copy snapshot (region + account aware via permissions)
+            # Copy snapshot (region + account aware)
             new_snapshot_id = copy_snapshot(
                 dest_ec2,
                 snapshot,
                 source_region
             )
+
+            # IMPORTANT:
+            # Cross-account requires permission with account number (tags will not be visible from dest account)
+            if source_account != dest_account:
+                allow_cross_account_copy(
+                    dest_ec2,
+                    new_snapshot_id,
+                    dest_account
+                )
 
             print(f"Copied -> {new_snapshot_id}")
 
@@ -130,11 +127,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    session_source = boto3.Session(region_name=args.src_region)
-    session_dest = boto3.Session(region_name=args.dest_region)
-
-    ec2_source = session_source.client("ec2")
-    ec2_dest = session_dest.client("ec2")
+    ec2_source = boto3.Session(region_name=args.src_region).client("ec2")
+    ec2_dest = boto3.Session(region_name=args.dest_region).client("ec2")
 
     process_csv(
         args.input_file,
