@@ -17,8 +17,12 @@ URL -> subpath (minus https://cdaweb.gsfc.nasa.gov/pub/ part)
 URL -> resource
 data_producer name + affiliation -> contact
 index -> s3://gov-nasa-hdrl-data1/spdf/cdaweb/[subpath]
+   or    s3://gov-nasa-hdrl-data1/spdf/cdaweb/data/indices/ [default]
 about -> https://cdaweb.gsfc.nasa.gov/misc/Notes[firstletter].html#[id]
 collections -> ["CDAWeb"]
+
+Flags: default is to write all indices to $INDEX_LOC, --localindex instead
+puts the indices next to the data.
 
 """
 
@@ -34,6 +38,7 @@ from typing import Any, Dict, List, Optional
 
 PUB_PREFIX = "https://cdaweb.gsfc.nasa.gov/pub/"
 S3_PREFIX = "s3://gov-nasa-hdrl-data1/spdf/cdaweb/"
+INDEX_LOC = "s3://gov-nasa-hdrl-data1/spdf/cdaweb/data/indices/"
 ABOUT_PREFIX = "https://cdaweb.gsfc.nasa.gov/misc/"
 
 # Require filenaming to end with one of these extensions (at end-of-string)
@@ -140,16 +145,15 @@ def _about_url(dataset_id: str) -> str:
     return f"{ABOUT_PREFIX}Notes{first}.html#{dataset_id}"
 
 
-def xml_to_catalog(xml_path: str) -> List[Dict[str, Any]]:
+def xml_to_catalog(xml_path: str, localindex: Bool) -> List[Dict[str, Any]]:
     tree = ET.parse(xml_path)
     root = tree.getroot()
-
     catalog: List[Dict[str, Any]] = []
 
+    errors = []
     for elem in root.iter():
         if _local(elem.tag) != "dataset":
             continue
-
         dataset_id = _get(elem, "serviceprovider_ID", "serviceprovider_ID")
         if not dataset_id:
             continue
@@ -183,14 +187,19 @@ def xml_to_catalog(xml_path: str) -> List[Dict[str, Any]]:
 
         # NEW: filter by filenaming suffix
         if not regex_pat or not FILENAME_EXT_RE.search(regex_pat):
+            errors.append(f"wrong filetype: {dataset_id},{regex_pat}\n")
             continue
 
         if not url:
+            errors.append(f"no url: {dataset_id},{regex_pat}")
             continue
 
         subpath = _url_to_subpath(url)
-        index = f"{S3_PREFIX}{subpath}/"
-
+        if localindex:
+            index = f"{S3_PREFIX}{subpath}/"
+        else:
+            index = f"{INDEX_LOC}"
+            
         obj: Dict[str, Any] = {
             "id": dataset_id,
             "title": title,
@@ -209,7 +218,7 @@ def xml_to_catalog(xml_path: str) -> List[Dict[str, Any]]:
         obj = {k: v for k, v in obj.items()}
         catalog.append(obj)
 
-    return catalog
+    return catalog, errors
 
 
 def main() -> None:
@@ -217,9 +226,10 @@ def main() -> None:
     ap.add_argument("xml", help="Input XML file")
     ap.add_argument("-o", "--out", required=True, help="Output JSON file")
     ap.add_argument("--pretty", action="store_true", help="Pretty-print JSON")
+    ap.add_argument("--localindex", action="store_true", help="store indexes next to data, not in toplevel")
     args = ap.parse_args()
 
-    catalog_items = xml_to_catalog(args.xml)
+    catalog_items, errors = xml_to_catalog(args.xml,args.localindex)
 
     output = {
         "Cloudy": "1.1",
@@ -241,6 +251,10 @@ def main() -> None:
         else:
             json.dump(output, f, separators=(",", ":"), ensure_ascii=False)
 
+    if len(errors) > 0:
+        with open("xml_errors.txt", "w", encoding="utf-8") as f:
+            f.writelines(errors)
+            
 
 if __name__ == "__main__":
     main()
