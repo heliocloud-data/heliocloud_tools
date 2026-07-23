@@ -1,33 +1,88 @@
-This includes a tool to convert a sorted S3 MANIFEST.csv into a set of per-dataid catalog indexes and main catalog.json index.
+# ABOUT
 
-Currently works for CDAWeb, presumes the following:
+Simple shell scripts for fetching delta updates of CDAWeb for S3 holdings
+(in ODR, with hard-coded destinations)
 
-1) obtain current SPDF holdings as 'spdf_curr'
+Currently codes for s3://gov-nasa-hdrl-data1/spdf/
 
-2) obtain current SPDF metadata 'all.xml' and convert to catalog form
+Also includes helper scripts for CDAWeb specifics.
 
-   xml2json2.py TBD
+Fetching the CDAWeb inventory from their website takes 4-8 minutes.
+Our 'stage2' processing takes est. 6-8 minutes to chug through the 4-8GB files.
+'stage3' to make the final curl fetch script is <10 seconds.
 
-2) obtain current ODR <MANIFEST> CSV in form 's3key,filesize'
-   (via Omar)
+## CORE SEQUENCE for creating a fetch roster
 
-3) Compare the two (20-40 min task):
-    sh manifest_prefilter.sh <MANIFEST> spdf_curr
-   This generates <MANIFEST>.filtered (files ODR owns that are in CDAWeb)
-              and <MANIFEST>.deleteme (files in ODR that are not in CDAWeb)
-   (there is a 3rd category, files in CDAWeb that are not in ODR)
+==> stage1_getCDAWeb_inventory.sh <==
+Fetches the current SPDF filelist (CDF and netCDF files only)
+  (Derived from cdaweb's spdf_filelist.sh script)
+usage: sh stage1_getCDAWeb_inventory.sh
+Output is 'spdf_curr'
 
-4) Generate new CloudCatalog indices via filtered
-   manifest2indices --archive cdaweb --catalog FROMABOVE --manifest FROMABOVE
+==> stage2_spdf_to_odr.sh <==
+Compares the above spdf_curr against an ODR manifest.csv to generate the
+  delta fetch list AND the delete list
+usage: sh stage2_spdf_to_odr.sh [manifest.csv] [spdf_curr]
+Output is 'fetch_cdaweb_for_odr.list',
+          'delete_cdaweb_from_odr.list', and
+	  'odr_index_me.list'
 
-5) Merge new catalog to existing catalog
-   TBD
+==> stage3_generate_S3_cp.sh <==
+Converts the above fetch_cdaweb_for_odr.list filelist into a 'copy to S3'
+  script that, when run, uses curl to copy files into
+  s3://scratch-data-ops/spdf/
+usage: sh stage3_generate_S3_cp.sh
+Output is 'fetch_cdaweb_for_odr.sh'
 
-6) Copy indices, new catalog to S3 staging
+## LOGIC
 
-7) Run test script on temp holdings
+stage1 is just a copy of the CDAWeb 'fetch me' script, that also filters
+for only .cdf/.nc files.
+
+stage2 uses the output of stage1_getCDAWeb_Inventory.sh ('spdf_curr') and
+generates the fetch, delete, and index lists, in format 'filename,filesize'
+
+stage3 just takes the fetch file and makes a curl script out of it.
+
+Stage 2 notes:
+This file takes [manifest.csv] plus [spdf_curr] to generate three files.
+All 3 are in 'filename,filesize' format
+
+1) fetch_cdaweb_for_odr.list = files to fetch from CDAWeb
+2) delete_from_odr.list = files that are in ODR but no longer in CDAWeb
+     (note that files that are in both but have different sizes are
+      not scheduled for deletion, as the above fetch will overwrite them)
+3) odr_index_me.list = files currently in ODR that are also in the
+     current CDAWeb, and hence safe to index.  Does not include the
+     above 'fetch' files since the are not yet in ODR.
+
+ It can deal with spdf 4 fields whitespace-separated starting with pub/ and
+ our manifest 2 fields comma-separated starting with spdf/cdaweb
+
+ Note if file sizes differ, we do not mark for deletion, just fetch (overwrite)
+
+ For indexing, there are 2 approaches:
+    a) run stage1 to get latest CDAWeb, index only current valids that we have
+    b) after moving fetches to staging, update manifest.csv and re-run this
+       with the older spdf_curr (not fetching a new one via stage1_)
+       If you do this approach, in theory fetch_cdaweb_for_odr.list should
+       be zero size as the two should match (ignoring deletes)
+       And, if you did do the deletes, delete_from_odr.list will also be zero.
 
 
-An XML or CSV file containing dataid descriptions and regexes to extract dates from filenames.  Currently a CDAWeb example 'sample_data/smallall.xml' is provided.
+## HELPER SCRIPTS
 
-An S3 CSV manifest, arbitrary fields so long as the last two files in a line are the full filename, then the filesize in bytes.  This file must be sorted in (a) dataid order and (b) time order for a given dataid.  In most cases this is just a straight alphabetic sort of the filename, as generally files are in some form of '*<dataid>*<year-leading date>*'.  Currently a CDAWeb example 'sample_data/smallsorted.csv' is provided.
+cdaweb_xml2json.py: convert CDAWeb's 'all.xml' into our 'catalog.json' format
+                    optionally can fetch the all.xml from CDAWeb
+  usage: python cdaweb_xml2json.py -x all.xml -o catalog-cdaweb.json --pretty
+    or   python cdaweb_xml2json.py --fetchxml -o catalog-cdaweb.json --pretty
+
+cdawebxml2txt.py: writes each 'all.xml' XML element dataid into 'dataids.txt'
+
+check_cdaweb_times.py: checks 'filelist.gz' for parseable ISO-like times,
+                       tallies error count plus logs into 'errorfiles.pkl'
+		       
+find_big_cdaweb_files.py: Given a CDAWeb 'filelist.gz', tells us how many
+                          files >5GB exist, stores file names in 'bigfiles.pkl'
+
+odr_testing.py: Spot checks ODR catalog holdings via CloudCatalog API

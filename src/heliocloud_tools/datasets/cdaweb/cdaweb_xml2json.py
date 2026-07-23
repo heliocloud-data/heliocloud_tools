@@ -1,7 +1,8 @@
 """
 Convert CDAWeb XML into catalog JSON objects using mappings:
 
-usage: python cdaweb_xml2json.py all.xml -o catalog-cdaweb.json --pretty
+usage: python cdaweb_xml2json.py -x all.xml -o catalog-cdaweb.json --pretty
+  or   python cdaweb_xml2json.py --fetchxml -o catalog-cdaweb.json --pretty
 
 Known bug: if CDAWeb XML elements have start/stop times of 'AUTO' or 'Recent'
 these get mapped to JSON null, which might break downstream software that
@@ -30,7 +31,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
+import requests
+import shutil
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
@@ -40,6 +44,7 @@ PUB_PREFIX = "https://cdaweb.gsfc.nasa.gov/pub/"
 S3_PREFIX = "s3://gov-nasa-hdrl-data1/spdf/cdaweb/"
 INDEX_LOC = "s3://gov-nasa-hdrl-data1/spdf/cdaweb/data/indices/"
 ABOUT_PREFIX = "https://cdaweb.gsfc.nasa.gov/misc/"
+XML_URL = "https://spdf.gsfc.nasa.gov/pub/catalogs/all.xml"
 
 # Require filenaming to end with one of these extensions (at end-of-string)
 FILENAME_EXT_RE = re.compile(r"\.(cdf|nc|fits|fts)$", re.IGNORECASE)
@@ -220,16 +225,36 @@ def xml_to_catalog(xml_path: str, localindex: Bool) -> List[Dict[str, Any]]:
 
     return catalog, errors
 
+def fetch_xml():
+    localfile = "all.xml"
+    response = requests.get(XML_URL)
+    if os.path.exists(localfile):
+        # version existing file
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        versioned_path = f"{localfile}.{timestamp}.bak"
+        shutil.move(localfile, versioned_path)
+    with open(localfile,"wb") as file:
+        file.write(response.content)
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("xml", help="Input XML file")
+    ap.add_argument("-x","--xml", required=False, help="Input XML file")
     ap.add_argument("-o", "--out", required=True, help="Output JSON file")
     ap.add_argument("--pretty", action="store_true", help="Pretty-print JSON")
+    ap.add_argument("--fetchxml", action="store_true", help="Fetch latest all.xml")
     ap.add_argument("--localindex", action="store_true", help="store indexes next to data, not in toplevel")
     args = ap.parse_args()
 
-    catalog_items, errors = xml_to_catalog(args.xml,args.localindex)
+    if args.fetchxml:
+        fetch_xml()
+        xmlfile = 'all.xml'
+    elif args.xml:
+        xmlfile = args.xml
+    else:
+        print("Error, no xml file specified, exiting.")
+        exit()
+        
+    catalog_items, errors = xml_to_catalog(xmlfile,args.localindex)
 
     output = {
         "Cloudy": "1.1",
