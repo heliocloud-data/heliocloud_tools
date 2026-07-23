@@ -24,7 +24,7 @@ Compares the above spdf_curr against an ODR manifest.csv to generate the
   delta fetch list AND the delete list
 usage: sh stage2_spdf_to_odr.sh [manifest.csv] [spdf_curr]
 Output is 'fetch_cdaweb_for_odr.list',
-          'delete_cdaweb_from_odr.list', and
+          'delete_from_odr.list', and
 	  'odr_index_me.list'
 
 ==> stage3_generate_S3_cp.sh <==
