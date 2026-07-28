@@ -3,8 +3,7 @@
 ***** REQUIRE catalog[someone].json with metadata for all items to index
 
 Streams a sorted MANIFEST.csv into its indices, also creates a versioned
-    'updates.csv' to update the catalog.json with.
-    (usually the case when just alphabetically sorting it)
+    'catalog-updated.json' with updated start/stop/mod/datais.
 
 Also makes list of valid ids indexed and list of all non-index errors.
 
@@ -28,7 +27,7 @@ with sample catalog-psp.json having fields:
             "subpath": "sdac/psp_wispr/fits/L1",
 
 
-    tbd: updating existing indices, updating catalog.json with partials
+    tbd: updating catalog.json
 
 Uses lookahead-- if filenames do not include an explicit end time,
   it sends the end time interval to be the start of the next data file
@@ -43,7 +42,7 @@ Added extra handling for when multiple dataid exist in a shared directory
 import argparse
 import bisect
 import csv
-from datetime import datetime
+from datetime import datetime, UTC
 import json
 import os
 import re
@@ -55,13 +54,15 @@ FILENAME_EXT_RE = re.compile(r"\.(cdf|nc|fits|fts)$", re.IGNORECASE)
 def setoptions(archive=None,catalog=None,manifest=None,s3prefix=None,chomp=0):
     globs = {}
     globs['indexhome'] = "indices"
-    globs['chomp'] = chomp # default is to remove nothing from MANIFEST lines
+    globs['chomp'] = int(chomp) # default is to remove nothing from MANIFEST lines
     globs['catalog'] = catalog
     globs['manifest'] = manifest
     globs['s3prefix'] = s3prefix
     # some know preset possibilities
     if archive == 'cdaweb':
         print(f"Processing {archive}")
+        if globs['chomp'] is None:
+            globs['chomp'] = 12
         if globs['catalog'] is None:
             globs['catalog'] = "catalog-cdaweb.json"
         if globs['manifest'] is None:
@@ -277,20 +278,56 @@ def dumpstats(validlist,validfile,errorlist, errorfile):
 
 def loadcatalog(catalog):
     with open(catalog, "r") as f:
-        data = json.load(f)
+        catalog_json = json.load(f)
         info = {}
-        for item in data.get("catalog", []):
+        for item in catalog_json.get("catalog", []):
             ele = {"id": item["id"],
                    "regex": item["regex"],
                    "pattern": template_to_regex_multi(item["regex"])
                    }
             info.setdefault(item["subpath"], []).append(ele)
-    return info
+    return info, catalog_json
+
+def to_dt(t):
+    """ Normalize input times to datetime
+        Accept strings like "2023-01-21T23:00:00.000Z
+    """
+    if isinstance(t, str):
+        # Strip trailing Z for fromisoformat
+        t = t.rstrip('Z')
+        return datetime.fromisoformat(t)
+    return t  # assume already datetime
+
+def updatejson(catalog_json, id, start, stop):
+    """
+    Update entry with given id in catalog_json["catalog"]:
+      - start: set if earlier than existing start
+      - stop: set if later than existing stop
+      - modification: set to current time (ISO 8601, UTC)
+    """
+    now_iso = datetime.now(UTC).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+    for entry in catalog_json.get("catalog", []):
+        if entry.get("id") == id:
+            # Update start if earlier
+            if to_dt(start) < to_dt(entry["start"]):
+                entry["start"] = start
+            # Update stop if later
+            if to_dt(stop) > to_dt(entry["stop"]):
+                entry["stop"] = stop
+            entry["modification"] = now_iso
+            break  # found the id; we're done
+    return catalog_json
+
+def dumpcatalog(original_catalog_name,catalog_json):
+    catname = re.sub(".json","-updated.json",original_catalog_name)
+    with open(catname, "w") as fout:
+        json.dump(catalog_json,fout, indent=4, sort_keys=False)
+        fout.write("\n") # optional newline
 
 ##### MAIN #####
 
 def m2i_main(globs):
-    info = loadcatalog(globs['catalog'])
+    info, catalog_json = loadcatalog(globs['catalog'])
     allstarts = sorted(info.keys())
     currentid, currentyear, currentindex = None, None, None
     errorlist = {}
@@ -320,8 +357,9 @@ def m2i_main(globs):
                         continue
                 else:
                     myinfo = info[prefix][0]
-                
                 if myinfo["id"] != currentid:
+                    if currentid is not None:
+                        catalog_json = updatejson(catalog_json, currentid, catalogstart, buffer['end'])
                     # new index time
                     try:
                         dumpline(buffer,fout,prefix=globs['s3prefix'])
@@ -332,7 +370,7 @@ def m2i_main(globs):
                     currentid = myinfo["id"]
                     regex = myinfo["regex"]
                     pattern = myinfo["pattern"]
-                    currentyear = None
+                    currentyear, catalogstart = None, None
                     validlist.append(f"{currentid}\n")
                 year = year_from_filename(line, regex)
                 try:
@@ -342,6 +380,7 @@ def m2i_main(globs):
                     errorlist[os.path.dirname(line)] = line
                     continue
                 start=isos[0]
+                if catalogstart is None: catalogstart = start
                 try:
                     end=isos[1]
                     lookahead=False
@@ -370,12 +409,17 @@ def m2i_main(globs):
                     dumpline(buffer,fout,prefix=globs['s3prefix'])
                 buffer={'start':start,'end':end,'s3key':line,
                         'fsize':fsize,'lookahead':lookahead}
+
+    if currentid is not None:
+        catalog_json = updatejson(catalog_json, currentid, catalogstart, buffer['end'])
+                
     try:
         fout.close()
     except:
         pass
 
     dumpstats(validlist, globs['validfile'], errorlist, globs['errorfile'])
+    dumpcatalog(globs['catalog'],catalog_json)
 
 if __name__ == "__main__":
     """ archive 'psp' or 'cdaweb' sets defaults for the below, or do manually:
