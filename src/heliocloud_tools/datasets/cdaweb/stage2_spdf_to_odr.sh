@@ -18,13 +18,29 @@ All 3 are in 'filename,filesize' format
 
  Note if file sizes differ, we do not mark for deletion, just fetch (overwrite)
 
- For indexing, there are 2 approaches:
-    a) run stage1 to get latest CDAWeb, index only current valids that we have
-    b) after moving fetches to staging, update manifest.csv and re-run this
-       with the older spdf_curr (not fetching a new one via stage1_)
-       If you do this approach, in theory fetch_cdaweb_for_odr.list should
-       be zero size as the two should match (ignoring deletes)
-       And, if you did do the deletes, delete_from_odr.list will also be zero.
+ For indexing, there are 2 approaches.  Do _not_ re-run 'stage1' when indexing,
+ as that might (rarely) create a sync edge condition!
+ *** After moving fetches to staging ***
+ 1) BEST
+       + Update manifest.csv
+       + re-run stage2 using existing spdf_curr vs this new manifest
+       + generate indices from the newly made 'odr_index_me.list'
+    This should create a 0-sized 'fetch' in addition to a valid 'index_me',
+    providing self-validation. (If you also did the deletes, 'delete' will
+    also be 0-sized). Note non-0 file sizes for either can occur due to
+    AWS glitches/dropouts and are okay.
+
+ 2) High-trust method.  If you do not want to/can't update the manifest.csv,
+    you can do an 'I hope the copy worked' method with the existing files.
+       + 'cat odr_index_me.list fetch_cdaweb_for_odr.list | sort | odr_trust_me.list'
+       + generate indices from 'odr_trust_me.list'
+    This method presumes the fetch worked 100% and all desired files did arrive
+
+Sync edge condition/Warning: the 'do not re-run stage1 when indexing' is due
+to timing. You want the index to be made AFTER copying over the 'fetch' items.
+Ex: CDAWeb updates THEMEIS from v2 -> v3. We would see 'v2' go into 'delete'
+and 'v3' into 'fetch', but that means the generated 'index_me' would have
+neither, and we would accidentally be temporarily de-listing that mission.
 
 COMMENT
 
