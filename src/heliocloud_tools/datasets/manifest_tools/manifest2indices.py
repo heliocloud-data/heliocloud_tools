@@ -48,39 +48,36 @@ import os
 import re
 import sys
 
-FILENAME_EXT_RE = re.compile(r"\.(cdf|nc|fits|fts)$", re.IGNORECASE)
-
 ## Option-setting, add/mod as new datasets require it
-def setoptions(archive=None,catalog=None,manifest=None,s3prefix=None,chomp=0):
+def setoptions(archive=None,catalog=None,manifest=None,s3prefix=None,chomp=0,collection='all',filter=None):
     globs = {}
     globs['indexhome'] = "indices"
     globs['chomp'] = int(chomp) # default is to remove nothing from MANIFEST lines
     globs['catalog'] = catalog
     globs['manifest'] = manifest
     globs['s3prefix'] = s3prefix
+    globs['collection'] = collection
+    if filter == 'default':
+        globs['filter'] = re.compile(r"\.(cdf|nc|fits|fts)$", re.IGNORECASE)
+    elif filter is None:
+        globs['filter'] = None
+    else:
+        globs['filter'] = re.compile(filter, re.IGNORECASE)
     # some know preset possibilities
     if archive == 'cdaweb':
         print(f"Processing {archive}")
-        if globs['chomp'] is None:
-            globs['chomp'] = 12
-        if globs['catalog'] is None:
-            globs['catalog'] = "catalog-cdaweb.json"
-        if globs['manifest'] is None:
-            globs['manifest'] = "jun-11_manifest_spdf.csv.filtered"
-        if globs['s3prefix'] is None:
-            globs['s3prefix'] = "s3://gov-nasa-hdrl-data1/spdf/cdaweb/"
+        globs['chomp'] = 12
+        globs['s3prefix'] = "s3://gov-nasa-hdrl-data1/spdf/cdaweb/"
+        globs['collection'] = "CDAWeb"
     elif archive == 'psp':
         print(f"Processing {archive}")
-        if globs['catalog'] is None:
-            globs['catalog'] = "catalog-psp.json"
-        if globs['manifest'] is None:
-            globs['manifest'] = "jun-11_manifest_psp_wispr_encounterless.csv"
-        if globs['s3prefix'] is None:
-            globs['s3prefix'] = "s3://gov-nasa-hdrl-data1/sdac/"
+        globs['s3prefix'] = "s3://gov-nasa-hdrl-data1/sdac/"
+        globs['collection'] = "PSP"
     if any(item is None for item in globs.values()):
         print("Need either a archive name, or a catalog/manifest/s3prefix, exiting")
         exit()
     globs['errorfile'] = re.sub('.json','',globs['catalog'])+'_errors.txt'
+    globs['errorlogfile'] = re.sub('.json','',globs['catalog'])+'_errorlog.txt'
     globs['validfile'] = re.sub('.json','',globs['catalog'])+'_valids.txt'
 
     return globs
@@ -190,6 +187,7 @@ def template_to_regex_multi(template: str) -> re.Pattern:
         i += 1
 
     pattern = "^" + "".join(regex_parts) + "$"
+
     return re.compile(pattern)
 
 
@@ -266,26 +264,32 @@ def dumpline(buffer,fout,prefix=''):
 
 ## Main routines
     
-def dumpstats(validlist,validfile,errorlist, errorfile):
+def dumpstats(validlist,validfile,errorlist, errorfile, errorlog, errorlogfile):
     print(f"{len(validlist)} good IDs indexed, see {validfile} for details")
     with open(validfile,"w") as fout:
         fout.writelines(validlist)
-            
-    print(f"{len(errorlist.keys())} bad path/datasets, see {errorfile} for details")
-    with open(errorfile,"w") as eout:
-        for mykey in sorted(errorlist.keys()):
-            eout.write(f"{mykey},{errorlist[mykey]}\n")
 
-def loadcatalog(catalog):
+    print(f"{len(errorlist)} bad IDs and {len(errorlog.keys())} bad path/datasets, see {errorfile},{errorlogfile} for details")
+    with open(errorfile,"w") as fout:
+        fout.writelines(errorlist)
+    with open(errorlogfile,"w") as fout:
+        for mykey in sorted(errorlog.keys()):
+            fout.write(f"{mykey},{errorlog[mykey]}\n")
+
+def loadcatalog(catalog,collection='all'):
     with open(catalog, "r") as f:
         catalog_json = json.load(f)
         info = {}
         for item in catalog_json.get("catalog", []):
-            ele = {"id": item["id"],
-                   "regex": item["regex"],
-                   "pattern": template_to_regex_multi(item["regex"])
-                   }
-            info.setdefault(item["subpath"], []).append(ele)
+            try:
+                if collection == 'all' or collection in item["collections"]:
+                    ele = {"id": item["id"],
+                           "regex": item["regex"],
+                           "pattern": template_to_regex_multi(item["regex"])
+                           }
+                    info.setdefault(item["subpath"], []).append(ele)
+            except:
+                pass # ignore id lacking regex/pattern, e.g. contribs
     return info, catalog_json
 
 def to_dt(t):
@@ -326,13 +330,15 @@ def dumpcatalog(original_catalog_name,catalog_json):
 
 ##### MAIN #####
 
-def m2i_main(globs):
-    info, catalog_json = loadcatalog(globs['catalog'])
+def m2i_main(globs,noisy=False):
+    info, catalog_json = loadcatalog(globs['catalog'],globs['collection'])
     allstarts = sorted(info.keys())
     currentid, currentyear, currentindex = None, None, None
-    errorlist = {}
-    validlist = []
+    errorlog = {}
+    errorlist = set()
+    validlist = set()
     buffer = None
+    fcount = 0 # new tracking stat as a progress bar
 
     with open(globs['manifest'], mode="r") as f:
         for line in f:
@@ -341,10 +347,12 @@ def m2i_main(globs):
                 line,fsize=line.split(',')
             except:
                 fsize=0 # for directory stubs and their ilk
-            if FILENAME_EXT_RE.search(line):
+            if fsize == 0:
+                continue # only valid files, no stubs, dirs or empties
+            if globs['filter'] is None or globs['filter'].search(line):
                 prefix = find_prefix(line, allstarts)
                 if prefix is None:
-                    errorlist[os.path.dirname(line)] = line
+                    errorlog[os.path.dirname(line)] = line
                     continue
                 if len(info[prefix]) > 1:
                     # edge case where multiple 'id' live in one 'prefix' dir
@@ -353,64 +361,60 @@ def m2i_main(globs):
                         if thisinfo["pattern"].match(os.path.basename(line)):
                             myinfo = thisinfo
                     if myinfo is None:
-                        errorlist[os.path.dirname(line)] = line
+                        errorlog[os.path.dirname(line)] = line
                         continue
                 else:
                     myinfo = info[prefix][0]
                 if myinfo["id"] != currentid:
-                    if currentid is not None:
-                        catalog_json = updatejson(catalog_json, currentid, catalogstart, buffer['end'])
-                    # new index time
-                    try:
+                    if fcount > 0 and currentid is not None and buffer is not None:
+                        # get rid of previous id first
+                        if noisy: print(f"Writing {fcount} files for {currentid}")
                         dumpline(buffer,fout,prefix=globs['s3prefix'])
-                        buffer=None
                         fout.close()
-                    except:
-                        pass
+                        catalog_json = updatejson(catalog_json, currentid, catalogstart, buffer['end'])
+                        validlist.add(f"{currentid}\n")
+                    # new index begins
                     currentid = myinfo["id"]
                     regex = myinfo["regex"]
                     pattern = myinfo["pattern"]
                     currentyear, catalogstart = None, None
-                    validlist.append(f"{currentid}\n")
-                year = year_from_filename(line, regex)
+                    fcount = 0
+                    buffer=None
                 try:
                     isos = isos_from_template_and_filename(pattern,
                             os.path.basename(line))
+                    fcount += 1
                 except:
-                    errorlist[os.path.dirname(line)] = line
+                    errorlog[os.path.dirname(line)] = f"{line},{pattern}"
+                    errorlist.add(f"{currentid}\n")
                     continue
+                year = year_from_filename(line, regex)
                 start=isos[0]
                 if catalogstart is None: catalogstart = start
                 try:
                     end=isos[1]
-                    lookahead=False
                 except:
                     end=start
-                    lookahead=True
-            
+                if buffer is not None:
+                    buffer['end']=start
+                    dumpline(buffer,fout,prefix=globs['s3prefix'])
                 if year != currentyear:
-                    if buffer is not None:
-                        if buffer['lookahead']:
-                            buffer['end']=start
-                        dumpline(buffer,fout,prefix=globs['s3prefix'])
-                        buffer=None
+                    # close out prior year, if any
                     try:
                         fout.close()
                     except:
                         pass
+                    # start new index file
                     currentyear = year
                     foutname = f"{globs['indexhome']}/{currentid}_{currentyear}.csv"
                     fout = open(foutname,"w")
                     fout.write("#start,stop,s3key,filesize\n")
 
-                if buffer is not None:
-                    if buffer['lookahead']:
-                        buffer['end']=start
-                    dumpline(buffer,fout,prefix=globs['s3prefix'])
                 buffer={'start':start,'end':end,'s3key':line,
-                        'fsize':fsize,'lookahead':lookahead}
+                        'fsize':fsize}
 
     if currentid is not None:
+        if noisy: print(f"Writing {fcount} files for {currentid}")
         catalog_json = updatejson(catalog_json, currentid, catalogstart, buffer['end'])
                 
     try:
@@ -418,7 +422,7 @@ def m2i_main(globs):
     except:
         pass
 
-    dumpstats(validlist, globs['validfile'], errorlist, globs['errorfile'])
+    dumpstats(validlist, globs['validfile'], errorlist, globs['errorfile'],errorlog, globs['errorlogfile'])
     dumpcatalog(globs['catalog'],catalog_json)
 
 if __name__ == "__main__":
@@ -441,7 +445,7 @@ if __name__ == "__main__":
     parser.add_argument("--archive",
                         dest="archive",
                         default=None,
-                        help="name of dataset")
+                        help="name of pre-known dataset, e.g. cdaweb, psp")
     parser.add_argument("--catalog",
                         dest="catalog",
                         default=None,
@@ -458,9 +462,21 @@ if __name__ == "__main__":
                         dest="chomp",
                         default=0,
                         help="extra chars to trim off manifest lines")
+    parser.add_argument("--filter",
+                        dest="filter",
+                        default="default",
+                        help="file regex to filter by, ignoring all non-matches")
+    parser.add_argument("--collection",
+                        dest="collection",
+                        default="all",
+                        help="subset of JSON to use via 'collection' field")
+    parser.add_argument("--noisy",
+                        action="store_true",
+                        help="prints dataid counts as a progress stat")
     args = parser.parse_args(sys.argv[1:])
     globs = setoptions(archive=args.archive,
                        catalog=args.catalog,manifest=args.manifest,
-                       s3prefix=args.s3prefix,chomp=args.chomp)
+                       s3prefix=args.s3prefix,chomp=args.chomp,
+                       collection=args.collection,filter=args.filter)
     os.makedirs(globs['indexhome'],exist_ok=True)
-    m2i_main(globs)
+    m2i_main(globs,args.noisy)

@@ -16,9 +16,12 @@ awk -F',' '
   split($1, a, "/")
   # Join first two path components
   key = a[1] "/" a[2]
+  seen[key]++
 
-  if (!(key in seen)) {
-    print key
-    seen[key] = 1
+}
+END {
+  for (k in seen) {
+    print k, seen[k]
   }
-}' "$inputfile"
+}
+' "$inputfile"
