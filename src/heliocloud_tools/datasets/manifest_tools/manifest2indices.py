@@ -5,6 +5,9 @@
 Streams a sorted MANIFEST.csv into its indices, also creates a versioned
     'catalog-updated.json' with updated start/stop/mod/datais.
 
+indices go into a staging directory 'staging/[index]', where [index] is from
+the metadata but with initial 's3://' or initial '/' removed to keep it local
+
 Also makes list of valid ids indexed and list of all non-index errors.
 
 + Currently filters for cdf/nc/fits/fts files. Change initial regex to alter
@@ -27,7 +30,7 @@ with sample catalog-psp.json having fields:
             "subpath": "sdac/psp_wispr/fits/L1",
 
 
-    tbd: updating catalog.json
+It updates the provided [catalog].json, versioning the prior one then overwriting.
 
 Uses lookahead-- if filenames do not include an explicit end time,
   it sends the end time interval to be the start of the next data file
@@ -47,11 +50,11 @@ import json
 import os
 import re
 import sys
+import version_file
 
 ## Option-setting, add/mod as new datasets require it
 def setoptions(archive=None,catalog=None,manifest=None,s3prefix=None,chomp=0,collection='all',filter=None):
     globs = {}
-    globs['indexhome'] = "indices"
     globs['chomp'] = int(chomp) # default is to remove nothing from MANIFEST lines
     globs['catalog'] = catalog
     globs['manifest'] = manifest
@@ -284,6 +287,7 @@ def loadcatalog(catalog,collection='all'):
             try:
                 if collection == 'all' or collection in item["collections"]:
                     ele = {"id": item["id"],
+                           "index": "staging/" + re.sub("^(s3://|/)","",item["index"]),
                            "regex": item["regex"],
                            "pattern": template_to_regex_multi(item["regex"])
                            }
@@ -322,11 +326,12 @@ def updatejson(catalog_json, id, start, stop):
             break  # found the id; we're done
     return catalog_json
 
-def dumpcatalog(original_catalog_name,catalog_json):
-    catname = re.sub(".json","-updated.json",original_catalog_name)
-    with open(catname, "w") as fout:
+def dumpcatalog(catalog_name,catalog_json):
+    version_file.version_file_timestamp(catalog_name)
+    with open(catalog_name, "w") as fout:
         json.dump(catalog_json,fout, indent=4, sort_keys=False)
         fout.write("\n") # optional newline
+    print(f"... Updated {catalog_name} (prior one versioned)")
 
 ##### MAIN #####
 
@@ -377,6 +382,7 @@ def m2i_main(globs,noisy=False):
                     currentid = myinfo["id"]
                     regex = myinfo["regex"]
                     pattern = myinfo["pattern"]
+                    indexhome = myinfo["index"]
                     currentyear, catalogstart = None, None
                     fcount = 0
                     buffer=None
@@ -406,7 +412,8 @@ def m2i_main(globs,noisy=False):
                         pass
                     # start new index file
                     currentyear = year
-                    foutname = f"{globs['indexhome']}/{currentid}_{currentyear}.csv"
+                    os.makedirs(indexhome,exist_ok=True)
+                    foutname = f"{indexhome}/{currentid}_{currentyear}.csv"
                     fout = open(foutname,"w")
                     fout.write("#start,stop,s3key,filesize\n")
 
@@ -478,5 +485,4 @@ if __name__ == "__main__":
                        catalog=args.catalog,manifest=args.manifest,
                        s3prefix=args.s3prefix,chomp=args.chomp,
                        collection=args.collection,filter=args.filter)
-    os.makedirs(globs['indexhome'],exist_ok=True)
     m2i_main(globs,args.noisy)
