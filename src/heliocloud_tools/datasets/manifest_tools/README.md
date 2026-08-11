@@ -26,6 +26,9 @@ pre-processing scripts as well.
      * [MANIFEST]_other.csv    # not spdf/sdac/contrib but data ext
      * [MANIFEST]_nondata.csv  # everything without those data extensions
 
+(est. time on a 26GB manifest was 27 minutes. Sorting was the slowest step,
+taking 2/3rds of the total time.)
+
 ### fetching and updating the metadata (catalog.json)
 
 3) Copy the current 'catalog.json' for the above disk, e.g.
@@ -34,8 +37,8 @@ pre-processing scripts as well.
 
 4) Optionally, current SPDF metadata 'all.xml' and convert to catalog form
 
-   * xml2json2.py TBD
-   * update_catalog.py catalog.json catalog-xml.json
+   * python ../cdaweb/cdaweb_xml2json.py --fetchxml -o catalog-cdaweb.json
+   * cloudcatalog-update-json catalog.json catalog-cdaweb.json --verbose
 
 ### CDAWeb-specific step to validate holdings
 

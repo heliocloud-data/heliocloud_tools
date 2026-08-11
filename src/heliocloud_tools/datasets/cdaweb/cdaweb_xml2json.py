@@ -1,8 +1,8 @@
 """
 Convert CDAWeb XML into catalog JSON objects using mappings:
 
-usage: python cdaweb_xml2json.py -x all.xml -o catalog-cdaweb.json --pretty
-  or   python cdaweb_xml2json.py --fetchxml -o catalog-cdaweb.json --pretty
+usage: python cdaweb_xml2json.py -x all.xml -o catalog-cdaweb.json
+  or   python cdaweb_xml2json.py --fetchxml -o catalog-cdaweb.json
 
 Known bug: if CDAWeb XML elements have start/stop times of 'AUTO' or 'Recent'
 these get mapped to JSON null, which might break downstream software that
@@ -240,7 +240,6 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("-x","--xml", required=False, help="Input XML file")
     ap.add_argument("-o", "--out", required=True, help="Output JSON file")
-    ap.add_argument("--pretty", action="store_true", help="Pretty-print JSON")
     ap.add_argument("--fetchxml", action="store_true", help="Fetch latest all.xml")
     ap.add_argument("--localindex", action="store_true", help="store indexes next to data, not in toplevel")
     args = ap.parse_args()
@@ -271,10 +270,7 @@ def main() -> None:
     }
 
     with open(args.out, "w", encoding="utf-8") as f:
-        if args.pretty:
-            json.dump(output, f, indent=2, ensure_ascii=False)
-        else:
-            json.dump(output, f, separators=(",", ":"), ensure_ascii=False)
+        json.dump(output, f, indent=4, ensure_ascii=False)
 
     if len(errors) > 0:
         with open("xml_errors.txt", "w", encoding="utf-8") as f:

@@ -33,13 +33,13 @@ fi
 
 echo "Splitting in sub files"
 egrep "^spdf/" "${tmp_filtered}" >"${out_spdf}"
-#egrep "^sdac/" "${tmp_filtered}" >"${out_sdac}"
+egrep "^sdac/" "${tmp_filtered}" >"${out_sdac}"
 egrep "^contrib/" "${tmp_filtered}" >"${out_contrib}"
 egrep -v "^(spdf|sdac|contrib)/" "${tmp_filtered}" >"${out_other}"
 
 echo "Elapsed: ${SECONDS}s, now sorting each subset"
 sort "${out_spdf}" -o "${out_spdf}"
-#sort "${out_sdac}" -o "${out_sdac}"
+sort "${out_sdac}" -o "${out_sdac}"
 sort "${out_contrib}" -o "${out_contrib}"
 sort "${out_other}" -o "${out_other}"
 
