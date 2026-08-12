@@ -69,6 +69,9 @@ All 3 are in 'filename,filesize' format
        be zero size as the two should match (ignoring deletes)
        And, if you did do the deletes, delete_from_odr.list will also be zero.
 
+### Edge Condition
+
+Sometimes CDAWeb has a new batch e.g. 'v3' over prior 'v2'.  In this case the old_index_me.list will _not_ contain any of that dataid, because the 'v2' do not exist in the spdf_curr but the 'v3' do not exist in current ODR manifest (because the copy hasn't occurred).  This is still safe, as running the re-indexing will simply not index anything, allowing any currently existing index (in this case, the prior run's 'v2' indices) to remain unchanged. Next push/update/indexing cycle will then update to 'v3' as expected.  Therefore this edge condition is safely handled without operation intervention.
 
 ## HELPER SCRIPTS
 

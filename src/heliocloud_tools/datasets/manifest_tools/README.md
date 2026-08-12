@@ -26,7 +26,7 @@ pre-processing scripts as well.
      * [MANIFEST]_other.csv    # not spdf/sdac/contrib but data ext
      * [MANIFEST]_nondata.csv  # everything without those data extensions
 
-(est. time on a 26GB manifest was 27 minutes. Sorting was the slowest step,
+(est. time on a 26GB manifest was 41 minutes. Sorting was the slowest step,
 taking 2/3rds of the total time.)
 
 ### fetching and updating the metadata (catalog.json)

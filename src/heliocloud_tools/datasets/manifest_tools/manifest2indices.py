@@ -67,7 +67,7 @@ def setoptions(archive=None,catalog=None,manifest=None,s3prefix=None,chomp=0,col
     else:
         globs['filter'] = re.compile(filter, re.IGNORECASE)
     # some know preset possibilities
-    if archive == 'cdaweb':
+    if archive == 'cdaweb' or archive == 'spdf':
         print(f"Processing {archive}")
         globs['chomp'] = 12
         globs['s3prefix'] = "s3://gov-nasa-hdrl-data1/spdf/cdaweb/"
